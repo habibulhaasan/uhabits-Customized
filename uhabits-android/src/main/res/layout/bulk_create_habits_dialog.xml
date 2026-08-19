@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/one_habit_per_line"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="13sp"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/habitNamesInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minLines="6"
+            android:gravity="top|start"
+            android:hint="@string/bulk_habit_hint"
+            android:inputType="textMultiLine|textCapSentences" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="16dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/apply_same_color" />
+
+            <Button
+                android:id="@+id/colorButton"
+                style="@style/Widget.AppCompat.Button.Colored"
+                android:layout_width="40dp"
+                android:layout_height="40dp" />
+
+        </LinearLayout>
+
+        <RadioGroup
+            android:id="@+id/habitTypeGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <RadioButton
+                android:id="@+id/rbYesNo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="@string/yes_or_no" />
+
+            <RadioButton
+                android:id="@+id/rbMeasurable"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/measurable" />
+
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/previewCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="13sp" />
+
+    </LinearLayout>
+</ScrollView>
