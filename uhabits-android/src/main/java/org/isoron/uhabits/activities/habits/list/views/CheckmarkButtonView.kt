@@ -100,13 +100,21 @@ class CheckmarkButtonView(
     }
 
     override fun onClick(v: View) {
-    performToggle()
-}
+        if (preferences.isShortToggleEnabled) {
+            performToggle()
+        } else {
+            onEdit()
+        }
+    }
 
-override fun onLongClick(v: View): Boolean {
-    onEdit()
-    return true
-}
+    override fun onLongClick(v: View): Boolean {
+        if (preferences.isShortToggleEnabled) {
+            onEdit()
+        } else {
+            performToggle()
+        }
+        return true
+    }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
