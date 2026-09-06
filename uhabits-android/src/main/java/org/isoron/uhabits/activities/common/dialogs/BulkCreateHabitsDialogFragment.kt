@@ -24,7 +24,7 @@ import android.content.res.ColorStateList
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.widget.RadioGroup
+import android.widget.ArrayAdapter
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import org.isoron.platform.gui.toInt
@@ -46,6 +46,7 @@ import org.isoron.uhabits.utils.dismissCurrentAndShow
 class BulkCreateHabitsDialogFragment : DialogFragment() {
 
     private var color = PaletteColor(8)
+    private var categoryId: Long? = null
     private lateinit var binding: BulkCreateHabitsDialogBinding
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -64,6 +65,10 @@ class BulkCreateHabitsDialogFragment : DialogFragment() {
                 updateColorSwatch(themeSwitcher)
             }
             picker.dismissCurrentAndShow(parentFragmentManager, "bulkColorPicker")
+        }
+
+        binding.categoryButton.setOnClickListener {
+            showCategoryPickerDialog(component)
         }
 
         fun updatePreview() {
@@ -88,7 +93,7 @@ class BulkCreateHabitsDialogFragment : DialogFragment() {
             .setPositiveButton(R.string.create) { _, _ ->
                 val names = parseNames(binding.habitNamesInput.text.toString())
                 val isNumerical = binding.habitTypeGroup.checkedRadioButtonId == R.id.rbMeasurable
-                createHabits(component, names, isNumerical)
+                createHabits(component, names, isNumerical, categoryId)
             }
             .setNegativeButton(R.string.cancel, null)
             .create()
@@ -104,12 +109,14 @@ class BulkCreateHabitsDialogFragment : DialogFragment() {
     private fun createHabits(
         component: org.isoron.uhabits.inject.HabitsApplicationComponent,
         names: List<String>,
-        isNumerical: Boolean
+        isNumerical: Boolean,
+        categoryId: Long?
     ) {
         for (name in names) {
             val habit = component.modelFactory.buildHabit()
             habit.name = name
             habit.color = color
+            habit.categoryId = categoryId
             habit.type = if (isNumerical) HabitType.NUMERICAL else HabitType.YES_NO
             habit.frequency = Frequency.DAILY
             if (isNumerical) {
@@ -124,6 +131,21 @@ class BulkCreateHabitsDialogFragment : DialogFragment() {
             component.commandRunner.run(command)
         }
         dismiss()
+    }
+
+    private fun showCategoryPickerDialog(component: org.isoron.uhabits.inject.HabitsApplicationComponent) {
+        val categories = component.categoryList.getAll()
+        val builder = AlertDialog.Builder(requireActivity())
+        val arrayAdapter = ArrayAdapter<String>(requireActivity(), android.R.layout.select_dialog_item)
+        arrayAdapter.add(getString(R.string.uncategorized))
+        categories.forEach { arrayAdapter.add(it.name) }
+
+        builder.setAdapter(arrayAdapter) { dialog, which ->
+            categoryId = if (which == 0) null else categories[which - 1].id
+            binding.categoryButton.text = if (categoryId == null) getString(R.string.uncategorized) else categories[which - 1].name
+            dialog.dismiss()
+        }
+        builder.show()
     }
 
     private fun updateColorSwatch(themeSwitcher: AndroidThemeSwitcher) {

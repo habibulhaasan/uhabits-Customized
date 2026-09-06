@@ -110,6 +110,10 @@ class CategoryListActivity : AppCompatActivity() {
             showAddCategoryDialog()
             return true
         }
+        if (item.itemId == android.R.id.home) {
+            finish()
+            return true
+        }
         return super.onOptionsItemSelected(item)
     }
 
