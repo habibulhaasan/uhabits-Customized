@@ -73,13 +73,11 @@ class ListHabitsSelectionMenu(
     override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
         val itemEdit = menu.findItem(R.id.action_edit_habit)
         val itemColor = menu.findItem(R.id.action_color)
-        val itemCategory = menu.findItem(R.id.action_change_category)
         val itemArchive = menu.findItem(R.id.action_archive_habit)
         val itemUnarchive = menu.findItem(R.id.action_unarchive_habit)
         val itemNotify = menu.findItem(R.id.action_notify)
 
         itemColor.isVisible = true
-        itemCategory.isVisible = true
         itemEdit.isVisible = behavior.canEdit()
         itemArchive.isVisible = behavior.canArchive()
         itemUnarchive.isVisible = behavior.canUnarchive()
@@ -115,11 +113,6 @@ class ListHabitsSelectionMenu(
 
             R.id.action_color -> {
                 behavior.onChangeColor()
-                return true
-            }
-
-            R.id.action_change_category -> {
-                behavior.onChangeCategory()
                 return true
             }
 

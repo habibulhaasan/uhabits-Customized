@@ -1,5 +1,5 @@
-﻿/*
- * Copyright (C) 2016-2025 Ãlinson Santos Xavier <git@axavier.org>
+/*
+ * Copyright (C) 2016-2025 Álinson Santos Xavier <git@axavier.org>
  *
  * This file is part of Loop Habit Tracker.
  *
@@ -16,8 +16,22 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.isoron.uhabits.core
+package org.isoron.uhabits.core.commands
 
-const val DATABASE_FILENAME = "uhabits.db"
+import org.isoron.uhabits.core.models.Habit
+import org.isoron.uhabits.core.models.HabitList
 
-const val DATABASE_VERSION = 26
+/**
+ * Bulk-assigns (or clears, if [newCategoryId] is null) the category of every
+ * habit in [selected]. Mirrors [ChangeHabitColorCommand].
+ */
+data class ChangeHabitCategoryCommand(
+    val habitList: HabitList,
+    val selected: List<Habit>,
+    val newCategoryId: Long?
+) : Command {
+    override fun run() {
+        for (h in selected) h.categoryId = newCategoryId
+        habitList.update(selected)
+    }
+}

@@ -20,15 +20,12 @@
 package org.isoron.uhabits.activities.habits.list.views
 
 import android.content.Context
-import android.graphics.Color
 import android.graphics.Rect
 import android.os.Bundle
 import android.os.Parcelable
 import android.view.GestureDetector
-import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
-import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -39,13 +36,10 @@ import androidx.recyclerview.widget.ItemTouchHelper.UP
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import me.tatarka.inject.annotations.Inject
-import org.isoron.platform.gui.toInt
 import org.isoron.uhabits.R
 import org.isoron.uhabits.activities.common.views.BundleSavedState
-import org.isoron.uhabits.core.models.Category
 import org.isoron.uhabits.core.models.Habit
 import org.isoron.uhabits.inject.ActivityContext
-import org.isoron.uhabits.utils.currentTheme
 
 @Inject
 class HabitCardListViewFactory(
@@ -142,47 +136,6 @@ class HabitCardListView(
         return cardView
     }
 
-    /**
-     * Inflates a new, unbound category header row. Kept as a plain inflate
-     * (no custom View subclass) since headers only ever display static text
-     * plus a color swatch -- unlike HabitCardView, there's no touch/gesture
-     * handling or per-frame drawing to justify one.
-     */
-    fun createCategoryHeaderView(): View {
-        return LayoutInflater.from(context).inflate(R.layout.list_item_category_header, this, false)
-    }
-
-    /**
-     * Binds a category header row. [category] is null for the trailing
-     * "Uncategorized" group.
-     */
-    fun bindCategoryHeaderView(
-        holder: CategoryHeaderViewHolder,
-        category: Category?,
-        habitCount: Int
-    ): View {
-        val view = holder.itemView
-        val nameView = view.findViewById<TextView>(R.id.categoryHeaderName)
-        val countView = view.findViewById<TextView>(R.id.categoryHeaderCount)
-        val colorBar = view.findViewById<View>(R.id.categoryHeaderColorBar)
-
-        nameView.text = category?.name ?: context.getString(R.string.uncategorized)
-        countView.text = context.resources.getQuantityString(
-            R.plurals.category_habit_count,
-            habitCount,
-            habitCount
-        )
-        colorBar.setBackgroundColor(
-            if (category != null) view.currentTheme().color(category.color).toInt() else Color.GRAY
-        )
-
-        // Headers are not draggable and don't open a habit or toggle
-        // selection, so (unlike bindCardView) no touch listener is attached
-        // here -- see TouchHelperCallback.getMovementFlags/onMove for how
-        // drag is disabled for this row type.
-        return view
-    }
-
     fun attachCardView(holder: HabitCardViewHolder) {
         (holder.itemView as HabitCardView).dataOffset = dataOffset
         attachedHolders.add(holder)
@@ -248,9 +201,6 @@ class HabitCardListView(
             recyclerView: RecyclerView,
             viewHolder: ViewHolder
         ): Int {
-            // Category headers are not draggable, and cannot be a drop
-            // target either (see onMove below).
-            if (viewHolder.itemViewType == HabitCardListAdapter.VIEW_TYPE_HEADER) return 0
             return makeMovementFlags(UP or DOWN, START or END)
         }
 
@@ -259,10 +209,6 @@ class HabitCardListView(
             from: ViewHolder,
             to: ViewHolder
         ): Boolean {
-            // Reject any move that would swap a habit with a category
-            // header: dragging a habit currently stops at a category
-            // boundary rather than moving it into a different category.
-            if (to.itemViewType == HabitCardListAdapter.VIEW_TYPE_HEADER) return false
             controller.value.drop(from.adapterPosition, to.adapterPosition)
             return true
         }

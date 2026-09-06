@@ -16,6 +16,7 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
 package org.isoron.uhabits.intents
 
 import android.content.Context
@@ -24,7 +25,6 @@ import android.net.Uri
 import me.tatarka.inject.annotations.Inject
 import org.isoron.uhabits.R
 import org.isoron.uhabits.activities.about.AboutActivity
-import org.isoron.uhabits.activities.categories.CategoryListActivity
 import org.isoron.uhabits.activities.habits.edit.EditHabitActivity
 import org.isoron.uhabits.activities.habits.show.ShowHabitActivity
 import org.isoron.uhabits.activities.intro.IntroActivity
@@ -53,9 +53,6 @@ class IntentFactory() {
 
     fun startAboutActivity(context: Context) =
         Intent(context, AboutActivity::class.java)
-
-    fun startCategoryListActivity(context: Context) =
-        Intent(context, CategoryListActivity::class.java)
 
     fun startIntroActivity(context: Context) =
         Intent(context, IntroActivity::class.java)

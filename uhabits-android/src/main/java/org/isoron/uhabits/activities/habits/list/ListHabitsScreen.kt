@@ -24,6 +24,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.ArrayAdapter
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import me.tatarka.inject.annotations.Inject
 import nl.dionsegijn.konfetti.core.Party
@@ -31,7 +33,9 @@ import nl.dionsegijn.konfetti.core.Position
 import nl.dionsegijn.konfetti.core.emitter.Emitter
 import org.isoron.platform.gui.toInt
 import org.isoron.platform.io.JavaUserFile
+import org.isoron.uhabits.HabitsApplication
 import org.isoron.uhabits.R
+import org.isoron.uhabits.activities.categories.CategoryListActivity
 import org.isoron.uhabits.activities.common.dialogs.BulkCreateHabitsDialogFragment
 import org.isoron.uhabits.activities.common.dialogs.CheckmarkDialog
 import org.isoron.uhabits.activities.common.dialogs.ColorPickerDialogFactory
@@ -54,6 +58,7 @@ import org.isoron.uhabits.core.tasks.TaskRunner
 import org.isoron.uhabits.core.ui.ThemeSwitcher
 import org.isoron.uhabits.core.ui.callbacks.CheckMarkDialogCallback
 import org.isoron.uhabits.core.ui.callbacks.NumberPickerCallback
+import org.isoron.uhabits.core.ui.callbacks.OnCategoryPickedCallback
 import org.isoron.uhabits.core.ui.callbacks.OnColorPickedCallback
 import org.isoron.uhabits.core.ui.callbacks.OnConfirmedCallback
 import org.isoron.uhabits.core.ui.screens.habits.list.ListHabitsBehavior
@@ -174,8 +179,8 @@ class ListHabitsScreen(
     }
 
     override fun showBulkCreateHabitsDialog() {
-    val dialog = BulkCreateHabitsDialogFragment()
-    dialog.show(activity.supportFragmentManager, "bulkCreateHabits")
+        val dialog = BulkCreateHabitsDialogFragment()
+        dialog.show(activity.supportFragmentManager, "bulkCreateHabits")
     }
 
     override fun showDeleteConfirmationScreen(callback: OnConfirmedCallback, quantity: Int) {
@@ -197,6 +202,7 @@ class ListHabitsScreen(
         activity.startActivity(intent)
     }
 
+    @Suppress("DEPRECATION")
     fun showImportScreen() {
         val intent = intentFactory.openDocument()
         activity.startActivityForResult(intent, REQUEST_OPEN_DOCUMENT)
@@ -264,6 +270,7 @@ class ListHabitsScreen(
         )
     }
 
+    @Suppress("DEPRECATION")
     override fun showSettingsScreen() {
         val intent = intentFactory.startSettingsActivity(activity)
         activity.startActivityForResult(intent, REQUEST_SETTINGS)
@@ -273,6 +280,31 @@ class ListHabitsScreen(
         val picker = colorPickerFactory.create(defaultColor, themeSwitcher.currentTheme!!)
         picker.setListener(callback)
         picker.dismissCurrentAndShow(activity.supportFragmentManager, "picker")
+    }
+
+    override fun showManageCategoriesScreen() {
+        val intent = Intent(activity, CategoryListActivity::class.java)
+        activity.startActivity(intent)
+    }
+
+    override fun showCategoryPicker(
+        defaultCategoryId: Long?,
+        callback: OnCategoryPickedCallback
+    ) {
+        val component = (activity.application as HabitsApplication).component
+        val categories = component.categoryList.getAll()
+
+        val builder = AlertDialog.Builder(activity)
+        val arrayAdapter = ArrayAdapter<String>(activity, android.R.layout.select_dialog_item)
+        arrayAdapter.add(activity.getString(R.string.uncategorized))
+        categories.forEach { arrayAdapter.add(it.name) }
+
+        builder.setAdapter(arrayAdapter) { dialog, which ->
+            val chosenId = if (which == 0) null else categories[which - 1].id
+            callback.onCategoryPicked(chosenId)
+            dialog.dismiss()
+        }
+        builder.show()
     }
 
     override fun showNumberPopup(
@@ -336,7 +368,10 @@ class ListHabitsScreen(
             }
 
             is EditHabitCommand -> {
-                return activity.resources.getQuantityString(R.plurals.toast_habits_changed, 1)
+                return activity.resources.getQuantityString(
+                    R.plurals.toast_habits_changed,
+                    1
+                )
             }
 
             is UnarchiveHabitsCommand -> {

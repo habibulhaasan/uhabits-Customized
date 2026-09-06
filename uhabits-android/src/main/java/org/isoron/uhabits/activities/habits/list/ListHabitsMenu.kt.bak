@@ -148,11 +148,6 @@ class ListHabitsMenu(
                 return true
             }
 
-            R.id.actionManageCategories -> {
-                behavior.onManageCategories()
-                return true
-            }
-
             R.id.actionHideArchived -> {
                 behavior.onToggleShowArchived()
                 activity.invalidateOptionsMenu()

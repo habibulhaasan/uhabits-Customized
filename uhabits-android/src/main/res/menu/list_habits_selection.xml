@@ -32,6 +32,11 @@
         android:icon="?iconChangeColor"/>
 
     <item
+        android:id="@+id/action_change_category"
+        android:title="@string/change_category"
+        app:showAsAction="never"/>
+
+    <item
         android:id="@+id/action_archive_habit"
         android:title="@string/archive"
         app:showAsAction="never" />

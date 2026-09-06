@@ -1,5 +1,5 @@
-﻿/*
- * Copyright (C) 2016-2025 Ãlinson Santos Xavier <git@axavier.org>
+/*
+ * Copyright (C) 2016-2025 Álinson Santos Xavier <git@axavier.org>
  *
  * This file is part of Loop Habit Tracker.
  *
@@ -16,8 +16,10 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.isoron.uhabits.core
+package org.isoron.uhabits.activities.habits.list.views
 
-const val DATABASE_FILENAME = "uhabits.db"
+import android.view.View
+import androidx.recyclerview.widget.RecyclerView
 
-const val DATABASE_VERSION = 26
+/** Holds a category header row (a group label above the habits it contains). */
+class CategoryHeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)

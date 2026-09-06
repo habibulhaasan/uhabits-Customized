@@ -125,6 +125,20 @@
                 </FrameLayout>
             </LinearLayout>
 
+            <!-- Habit Category -->
+            <FrameLayout style="@style/FormOuterBox">
+                <LinearLayout style="@style/FormInnerBox">
+                    <TextView
+                            android:id="@+id/categoryPicker"
+                            style="?android:attr/spinnerDropDownItemStyle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:drawablePadding="16dp"
+                            android:gravity="center_vertical"
+                            android:padding="16dp" />
+                </LinearLayout>
+            </FrameLayout>
+
             <!-- Habit Question -->
             <FrameLayout style="@style/FormOuterBox">
                 <LinearLayout style="@style/FormInnerBox">

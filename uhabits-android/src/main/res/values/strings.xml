@@ -248,4 +248,19 @@
         <item quantity="one">%d habit will be created</item>
         <item quantity="other">%d habits will be created</item>
     </plurals>
+    <string name="manage_categories">Manage categories</string>
+    <string name="new_category">New category</string>
+    <string name="edit_category">Edit category</string>
+    <string name="category_name_hint">Category name</string>
+    <string name="category_name_required">Please enter a name</string>
+    <string name="delete_category">Delete category</string>
+    <string name="delete_category_confirmation">Habits in this category will not be deleted; they will simply become uncategorized.</string>
+    <string name="no_categories_yet">No categories yet. Tap + to create one.</string>
+    <string name="uncategorized">Uncategorized</string>
+    <plurals name="category_habit_count">
+        <item quantity="one">%d habit</item>
+        <item quantity="other">%d habits</item>
+    </plurals>
+    <string name="category">Category</string>
+    <string name="change_category">Change category</string>
 </resources>

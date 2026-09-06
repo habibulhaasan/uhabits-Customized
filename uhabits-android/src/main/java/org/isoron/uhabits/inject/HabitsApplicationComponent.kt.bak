@@ -29,7 +29,6 @@ import org.isoron.uhabits.core.AppScope
 import org.isoron.uhabits.core.commands.CommandRunner
 import org.isoron.uhabits.core.io.GenericImporter
 import org.isoron.uhabits.core.io.Logging
-import org.isoron.uhabits.core.models.CategoryList
 import org.isoron.uhabits.core.models.HabitList
 import org.isoron.uhabits.core.models.ModelFactory
 import org.isoron.uhabits.core.models.sqlite.SQLModelFactory
@@ -67,7 +66,6 @@ abstract class HabitsApplicationComponent(
 
     @get:AppContext
     abstract val context: Context
-    abstract val categoryList: CategoryList
     abstract val genericImporter: GenericImporter
     abstract val habitCardListCache: HabitCardListCache
     abstract val habitList: HabitList
@@ -129,11 +127,6 @@ abstract class HabitsApplicationComponent(
     @AppScope
     @Provides
     open fun habitList(list: SQLiteHabitList): HabitList = list
-
-    @AppScope
-    @Provides
-    open fun categoryList(modelFactory: ModelFactory): CategoryList =
-        (modelFactory as SQLModelFactory).buildCategoryList()
 
     @AppScope
     @Provides

@@ -78,8 +78,8 @@ open class MemoryHabitList : HabitList {
     @Synchronized
     override fun getById(id: Long): Habit? {
         for (h in list) {
-            checkNotNull(h.id)
-            if (h.id == id) return h
+            val habitId = checkNotNull(h.id)
+            if (habitId == id) return h
         }
         return null
     }
@@ -119,8 +119,8 @@ open class MemoryHabitList : HabitList {
         }
         val nameComparatorDesc =
             Comparator { h1: Habit, h2: Habit -> nameComparatorAsc.compare(h2, h1) }
-        val colorComparatorAsc = Comparator<Habit> { (color1), (color2) ->
-            color1.compareTo(color2)
+        val colorComparatorAsc = Comparator<Habit> { habit1, habit2 ->
+            habit1.color.compareTo(habit2.color)
         }
         val colorComparatorDesc =
             Comparator { h1: Habit, h2: Habit -> colorComparatorAsc.compare(h2, h1) }
@@ -181,14 +181,15 @@ open class MemoryHabitList : HabitList {
     @Synchronized
     override fun reorder(from: Habit, to: Habit) {
         throwIfHasParent()
-        check(!(primaryOrder !== Order.BY_POSITION)) { "cannot reorder automatically sorted list" }
+        check(primaryOrder === Order.BY_POSITION) { "cannot reorder automatically sorted list" }
         require(indexOf(from) >= 0) { "list does not contain (from) habit" }
         val toPos = indexOf(to)
         require(toPos >= 0) { "list does not contain (to) habit" }
         list.remove(from)
         list.add(toPos, from)
-        var position = 0
-        for (h in list) h.position = position++
+        for ((index, h) in list.withIndex()) {
+            h.position = index
+        }
         observable.notifyListeners()
     }
 
@@ -205,7 +206,7 @@ open class MemoryHabitList : HabitList {
     private fun throwIfHasParent() {
         check(parent == null) {
             "Filtered lists cannot be modified directly. " +
-                "You should modify the parent list instead."
+                    "You should modify the parent list instead."
         }
     }
 

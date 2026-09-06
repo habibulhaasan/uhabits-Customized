@@ -20,7 +20,6 @@ package org.isoron.uhabits.core.ui.screens.habits.list
 
 import me.tatarka.inject.annotations.Inject
 import org.isoron.uhabits.core.commands.ArchiveHabitsCommand
-import org.isoron.uhabits.core.commands.ChangeHabitCategoryCommand
 import org.isoron.uhabits.core.commands.ChangeHabitColorCommand
 import org.isoron.uhabits.core.commands.CommandRunner
 import org.isoron.uhabits.core.commands.DeleteHabitsCommand
@@ -28,7 +27,6 @@ import org.isoron.uhabits.core.commands.UnarchiveHabitsCommand
 import org.isoron.uhabits.core.models.Habit
 import org.isoron.uhabits.core.models.HabitList
 import org.isoron.uhabits.core.models.PaletteColor
-import org.isoron.uhabits.core.ui.callbacks.OnCategoryPickedCallback
 import org.isoron.uhabits.core.ui.callbacks.OnColorPickedCallback
 import org.isoron.uhabits.core.ui.callbacks.OnConfirmedCallback
 
@@ -59,27 +57,9 @@ class ListHabitsSelectionMenuBehavior(
     }
 
     fun onChangeColor() {
-        val selected = adapter.getSelected()
-        if (selected.isEmpty()) return
-        val color = selected[0].color
+        val (color) = adapter.getSelected()[0]
         screen.showColorPicker(color) { selectedColor: PaletteColor ->
-            commandRunner.run(ChangeHabitColorCommand(habitList, selected, selectedColor))
-            adapter.clearSelection()
-        }
-    }
-
-    /**
-     * Moves every selected habit into a category chosen from a picker
-     * (or clears their category, if "Uncategorized" is chosen). The
-     * picker is pre-selected to the first selected habit's current
-     * category, purely as a starting point -- selected habits may
-     * currently span several different categories.
-     */
-    fun onChangeCategory() {
-        val selected = adapter.getSelected()
-        if (selected.isEmpty()) return
-        screen.showCategoryPicker(selected[0].categoryId) { newCategoryId: Long? ->
-            commandRunner.run(ChangeHabitCategoryCommand(habitList, selected, newCategoryId))
+            commandRunner.run(ChangeHabitColorCommand(habitList, adapter.getSelected(), selectedColor))
             adapter.clearSelection()
         }
     }
@@ -113,11 +93,6 @@ class ListHabitsSelectionMenuBehavior(
     }
 
     interface Screen {
-        fun showCategoryPicker(
-            defaultCategoryId: Long?,
-            callback: OnCategoryPickedCallback
-        )
-
         fun showColorPicker(
             defaultColor: PaletteColor,
             callback: OnColorPickedCallback

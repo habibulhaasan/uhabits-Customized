@@ -1,5 +1,5 @@
-﻿/*
- * Copyright (C) 2016-2025 Ãlinson Santos Xavier <git@axavier.org>
+/*
+ * Copyright (C) 2016-2025 Álinson Santos Xavier <git@axavier.org>
  *
  * This file is part of Loop Habit Tracker.
  *
@@ -16,8 +16,9 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.isoron.uhabits.core
+package org.isoron.uhabits.core.ui.callbacks
 
-const val DATABASE_FILENAME = "uhabits.db"
-
-const val DATABASE_VERSION = 26
+/** Null means "uncategorized". Mirrors [OnColorPickedCallback]. */
+fun interface OnCategoryPickedCallback {
+    fun onCategoryPicked(categoryId: Long?)
+}

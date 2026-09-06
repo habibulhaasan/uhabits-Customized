@@ -28,8 +28,7 @@ import android.text.Spanned
 import android.text.format.DateFormat
 import android.view.View
 import android.widget.ArrayAdapter
-import android.widget.EditText
-import android.widget.TextView
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.DialogFragment
@@ -42,9 +41,9 @@ import org.isoron.uhabits.activities.AndroidThemeSwitcher
 import org.isoron.uhabits.activities.common.dialogs.ColorPickerDialogFactory
 import org.isoron.uhabits.activities.common.dialogs.FrequencyPickerDialog
 import org.isoron.uhabits.activities.common.dialogs.WeekdayPickerDialog
+import org.isoron.uhabits.core.commands.CommandRunner
 import org.isoron.uhabits.core.commands.CreateHabitCommand
 import org.isoron.uhabits.core.commands.EditHabitCommand
-import org.isoron.uhabits.core.models.Category
 import org.isoron.uhabits.core.models.Frequency
 import org.isoron.uhabits.core.models.Habit
 import org.isoron.uhabits.core.models.HabitType
@@ -60,7 +59,6 @@ import org.isoron.uhabits.utils.dismissCurrentAndShow
 import org.isoron.uhabits.utils.formatTime
 import org.isoron.uhabits.utils.toFormattedString
 
-@SuppressLint("StringFormatInvalid", "StringFormatMatches")
 fun formatFrequency(freqNum: Int, freqDen: Int, resources: Resources) = when {
     freqNum == 1 && (freqDen == 30 || freqDen == 31) -> resources.getString(R.string.every_month)
     freqDen == 30 || freqDen == 31 -> resources.getString(R.string.x_times_per_month, freqNum)
@@ -75,6 +73,7 @@ class EditHabitActivity : AppCompatActivity() {
 
     private lateinit var themeSwitcher: AndroidThemeSwitcher
     private lateinit var binding: ActivityEditHabitBinding
+    private lateinit var commandRunner: CommandRunner
 
     var habitId = -1L
     lateinit var habitType: HabitType
@@ -87,15 +86,6 @@ class EditHabitActivity : AppCompatActivity() {
     var reminderMin = -1
     var reminderDays: WeekdayList = WeekdayList.EVERY_DAY
     var targetType = NumericalHabitType.AT_LEAST
-
-    /** Null means "uncategorized". */
-    var categoryId: Long? = null
-
-    private val categoryPickerView: TextView?
-        get() {
-            val resId = resources.getIdentifier("categoryPicker", "id", packageName)
-            return if (resId != 0) binding.root.findViewById(resId) else null
-        }
 
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
@@ -119,7 +109,6 @@ class EditHabitActivity : AppCompatActivity() {
             freqNum = habit.frequency.numerator
             freqDen = habit.frequency.denominator
             targetType = habit.targetType
-            categoryId = habit.categoryId
             habit.reminder?.let {
                 reminderHour = it.hour
                 reminderMin = it.minute
@@ -132,10 +121,6 @@ class EditHabitActivity : AppCompatActivity() {
             binding.targetInput.setText(habit.targetValue.toString())
         } else {
             habitType = HabitType.fromInt(intent.getIntExtra("habitType", HabitType.YES_NO.value))
-            if (intent.hasExtra("categoryId")) {
-                val extraCategoryId = intent.getLongExtra("categoryId", -1)
-                categoryId = if (extraCategoryId >= 0) extraCategoryId else null
-            }
         }
 
         if (state != null) {
@@ -147,8 +132,6 @@ class EditHabitActivity : AppCompatActivity() {
             reminderHour = state.getInt("reminderHour")
             reminderMin = state.getInt("reminderMin")
             reminderDays = WeekdayList(state.getInt("reminderDays"))
-            val savedCategoryId = state.getLong("categoryId")
-            categoryId = if (savedCategoryId >= 0) savedCategoryId else null
         }
 
         updateColors()
@@ -179,11 +162,6 @@ class EditHabitActivity : AppCompatActivity() {
                 updateColors()
             }
             picker.dismissCurrentAndShow(supportFragmentManager, "colorPicker")
-        }
-
-        populateCategory()
-        categoryPickerView?.setOnClickListener {
-            showCategoryPickerDialog()
         }
 
         populateFrequency()
@@ -282,66 +260,13 @@ class EditHabitActivity : AppCompatActivity() {
         }
     }
 
-    private fun showCategoryPickerDialog() {
-        val component = (application as HabitsApplication).component
-        val categories = component.categoryList.getAll()
-
-        val builder = AlertDialog.Builder(this)
-        val arrayAdapter = ArrayAdapter<String>(this, android.R.layout.select_dialog_item)
-        arrayAdapter.add(getString(R.string.uncategorized))
-        categories.forEach { arrayAdapter.add(it.name) }
-        arrayAdapter.add(getString(R.string.new_category))
-
-        builder.setAdapter(arrayAdapter) { dialog, which ->
-            if (which == arrayAdapter.count - 1) {
-                dialog.dismiss()
-                showCreateCategoryDialog()
-                return@setAdapter
-            }
-            categoryId = when (which) {
-                0 -> null
-                else -> categories[which - 1].id
-            }
-            populateCategory()
-            dialog.dismiss()
-        }
-        builder.show()
-    }
-
-    private fun showCreateCategoryDialog() {
-        val component = (application as HabitsApplication).component
-        val input = EditText(this)
-        input.hint = getString(R.string.category_name_hint)
-
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.new_category))
-            .setView(input)
-            .setPositiveButton(R.string.save) { _, _ ->
-                val name = input.text.toString().trim()
-                if (name.isNotEmpty()) {
-                    val category = Category(name = name)
-                    component.categoryList.add(category)
-                    categoryId = category.id
-                    populateCategory()
-                }
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
-
-    private fun populateCategory() {
-        val component = (application as HabitsApplication).component
-        val name = categoryId?.let { id -> component.categoryList.getById(id)?.name }
-            ?: getString(R.string.uncategorized)
-        categoryPickerView?.text = name
-    }
-
     private fun save() {
         val component = (application as HabitsApplication).component
         val habit = component.modelFactory.buildHabit()
 
+        var original: Habit? = null
         if (habitId >= 0) {
-            val original = component.habitList.getById(habitId)!!
+            original = component.habitList.getById(habitId)!!
             habit.copyFrom(original)
         }
 
@@ -349,7 +274,6 @@ class EditHabitActivity : AppCompatActivity() {
         habit.question = binding.questionInput.text.trim().toString()
         habit.description = binding.notesInput.text.trim().toString()
         habit.color = color
-        habit.categoryId = categoryId
         if (reminderHour >= 0) {
             habit.reminder = Reminder(reminderHour, reminderMin, reminderDays)
         } else {
@@ -384,7 +308,7 @@ class EditHabitActivity : AppCompatActivity() {
     private fun validate(): Boolean {
         var isValid = true
         if (binding.nameInput.text.isEmpty()) {
-            binding.nameInput.error = getFormattedValidationError()
+            binding.nameInput.error = getFormattedValidationError(R.string.validation_cannot_be_blank)
             isValid = false
         }
         if (habitType == HabitType.NUMERICAL) {
@@ -410,6 +334,7 @@ class EditHabitActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("StringFormatMatches")
     private fun populateFrequency() {
         binding.booleanFrequencyPicker.text = formatFrequency(freqNum, freqDen, resources)
         binding.numericalFrequencyPicker.text = when (freqDen) {
@@ -427,7 +352,6 @@ class EditHabitActivity : AppCompatActivity() {
         }
     }
 
-    @Suppress("DEPRECATION")
     private fun updateColors() {
         androidColor = themeSwitcher.currentTheme.color(color).toInt()
         binding.colorButton.backgroundTintList = ColorStateList.valueOf(androidColor)
@@ -437,9 +361,9 @@ class EditHabitActivity : AppCompatActivity() {
         }
     }
 
-    private fun getFormattedValidationError(): Spanned {
-        val html = "<font color=#FFFFFF>${getString(R.string.validation_cannot_be_blank)}</font>"
-        return Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY)
+    private fun getFormattedValidationError(@StringRes resId: Int): Spanned {
+        val html = "<font color=#FFFFFF>${getString(resId)}</font>"
+        return Html.fromHtml(html)
     }
 
     override fun onSaveInstanceState(state: Bundle) {
@@ -454,7 +378,6 @@ class EditHabitActivity : AppCompatActivity() {
             putInt("reminderHour", reminderHour)
             putInt("reminderMin", reminderMin)
             putInt("reminderDays", reminderDays.toInteger())
-            putLong("categoryId", categoryId ?: -1L)
         }
     }
 }

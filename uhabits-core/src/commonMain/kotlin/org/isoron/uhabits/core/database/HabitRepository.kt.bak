@@ -24,8 +24,7 @@ data class HabitData(
     var targetValue: Double = 0.0,
     var targetType: Int = 0,
     var unit: String = "",
-    var uuid: String? = null,
-    var categoryId: Long? = null
+    var uuid: String? = null
 )
 
 class HabitRepository(private val db: Database) {
@@ -33,7 +32,7 @@ class HabitRepository(private val db: Database) {
         db.prepareStatement(
             """SELECT id, name, description, question, freq_num, freq_den, color,
                position, reminder_hour, reminder_min, reminder_days, highlight,
-               archived, type, target_value, target_type, unit, uuid, category_id
+               archived, type, target_value, target_type, unit, uuid
                FROM Habits ORDER BY position"""
         )
     }
@@ -42,8 +41,8 @@ class HabitRepository(private val db: Database) {
         db.prepareStatement(
             """INSERT INTO Habits(name, description, question, freq_num, freq_den,
                color, position, reminder_hour, reminder_min, reminder_days,
-               highlight, archived, type, target_value, target_type, unit, uuid, category_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+               highlight, archived, type, target_value, target_type, unit, uuid)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         )
     }
 
@@ -51,8 +50,8 @@ class HabitRepository(private val db: Database) {
         db.prepareStatement(
             """INSERT INTO Habits(id, name, description, question, freq_num, freq_den,
                color, position, reminder_hour, reminder_min, reminder_days,
-               highlight, archived, type, target_value, target_type, unit, uuid, category_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+               highlight, archived, type, target_value, target_type, unit, uuid)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         )
     }
 
@@ -61,7 +60,7 @@ class HabitRepository(private val db: Database) {
             """UPDATE Habits SET name=?, description=?, question=?, freq_num=?,
                freq_den=?, color=?, position=?, reminder_hour=?, reminder_min=?,
                reminder_days=?, highlight=?, archived=?, type=?, target_value=?,
-               target_type=?, unit=?, uuid=?, category_id=? WHERE id=?"""
+               target_type=?, unit=?, uuid=? WHERE id=?"""
         )
     }
 
@@ -69,40 +68,11 @@ class HabitRepository(private val db: Database) {
         db.prepareStatement("DELETE FROM Habits WHERE id = ?")
     }
 
-    /**
-     * Returns every habit belonging to a given category, ordered by position.
-     * Pass null to fetch uncategorized habits.
-     */
-    private val findByCategoryStmt by lazy {
-        db.prepareStatement(
-            """SELECT id, name, description, question, freq_num, freq_den, color,
-               position, reminder_hour, reminder_min, reminder_days, highlight,
-               archived, type, target_value, target_type, unit, uuid, category_id
-               FROM Habits WHERE category_id IS ? OR category_id = ? ORDER BY position"""
-        )
-    }
-
     fun findAll(): List<HabitData> {
         findAllStmt.reset()
         val results = mutableListOf<HabitData>()
         while (findAllStmt.step() == StepResult.ROW) {
             results.add(readRow(findAllStmt))
-        }
-        return results
-    }
-
-    fun findByCategory(categoryId: Long?): List<HabitData> {
-        findByCategoryStmt.reset()
-        if (categoryId == null) {
-            findByCategoryStmt.bindNull(1)
-            findByCategoryStmt.bindNull(2)
-        } else {
-            findByCategoryStmt.bindLong(1, categoryId)
-            findByCategoryStmt.bindLong(2, categoryId)
-        }
-        val results = mutableListOf<HabitData>()
-        while (findByCategoryStmt.step() == StepResult.ROW) {
-            results.add(readRow(findByCategoryStmt))
         }
         return results
     }
@@ -124,7 +94,7 @@ class HabitRepository(private val db: Database) {
     fun update(data: HabitData) {
         updateStmt.reset()
         bindForInsert(updateStmt, data)
-        updateStmt.bindLong(19, data.id!!)
+        updateStmt.bindLong(18, data.id!!)
         updateStmt.step()
     }
 
@@ -157,7 +127,6 @@ class HabitRepository(private val db: Database) {
         stmt.bindInt(15 + o, data.targetType)
         stmt.bindText(16 + o, data.unit)
         if (data.uuid != null) stmt.bindText(17 + o, data.uuid!!) else stmt.bindNull(17 + o)
-        if (data.categoryId != null) stmt.bindLong(18 + o, data.categoryId!!) else stmt.bindNull(18 + o)
     }
 
     private fun readRow(stmt: PreparedStatement): HabitData {
@@ -179,8 +148,7 @@ class HabitRepository(private val db: Database) {
             targetValue = stmt.getReal(14),
             targetType = stmt.getInt(15),
             unit = stmt.getText(16),
-            uuid = stmt.getTextOrNull(17),
-            categoryId = stmt.getLongOrNull(18)
+            uuid = stmt.getTextOrNull(17)
         )
     }
 }
