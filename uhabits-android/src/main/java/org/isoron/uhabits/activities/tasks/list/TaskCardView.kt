@@ -21,9 +21,9 @@ package org.isoron.uhabits.activities.tasks.list
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
+import android.os.Build
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.RectF
 import android.text.TextPaint
 import android.text.TextUtils
 import android.view.Gravity
@@ -137,7 +137,7 @@ class TaskCardView(
 
             background = android.graphics.drawable.GradientDrawable().apply {
                 cornerRadius = dp(2f)
-                setColor(theme.windowBackground)
+                setColor(theme.cardBackgroundColor.toInt())
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -267,7 +267,7 @@ class TaskCheckmarkView(context: Context) : View(context) {
             val em = paint.measureText("m")
             canvas.drawText(icon, w / 2f, h / 2f + 0.4f * em, paint)
         } else {
-            val lowContrastColor = org.isoron.uhabits.utils.sres.getColor(R.attr.contrast40)
+            val lowContrastColor = sres.getColor(R.attr.contrast40)
             paint.color = lowContrastColor
             paint.textSize = sp(14.0f)
             val icon = context.getString(R.string.fa_times)
