@@ -43,6 +43,26 @@ class HabitsDatabaseOpener(
     override fun onOpen(db: SQLiteDatabase) {
         super.onOpen(db)
         db.disableWriteAheadLogging()
+        db.execSQL("""
+            create table if not exists TaskCategories (
+                id integer primary key autoincrement,
+                name text not null,
+                color integer not null default 0,
+                position integer not null default 0
+            )
+        """)
+        db.execSQL("""
+            create table if not exists Tasks (
+                id integer primary key autoincrement,
+                title text not null,
+                description text,
+                category_id integer references TaskCategories(id),
+                due_date integer,
+                reminder_time integer,
+                completed integer not null default 0,
+                position integer not null default 0
+            )
+        """)
     }
 
     override fun onUpgrade(

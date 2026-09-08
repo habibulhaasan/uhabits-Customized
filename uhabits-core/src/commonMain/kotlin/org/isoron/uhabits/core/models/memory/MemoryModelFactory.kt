@@ -18,10 +18,13 @@
  */
 package org.isoron.uhabits.core.models.memory
 
+import org.isoron.uhabits.core.models.CategoryList
 import org.isoron.uhabits.core.models.EntryList
 import org.isoron.uhabits.core.models.ModelFactory
 import org.isoron.uhabits.core.models.ScoreList
 import org.isoron.uhabits.core.models.StreakList
+import org.isoron.uhabits.core.models.TaskCategoryList
+import org.isoron.uhabits.core.models.TaskList
 
 class MemoryModelFactory : ModelFactory {
     override fun buildComputedEntries() = EntryList()
@@ -29,4 +32,13 @@ class MemoryModelFactory : ModelFactory {
     override fun buildHabitList() = MemoryHabitList()
     override fun buildScoreList() = ScoreList()
     override fun buildStreakList() = StreakList()
+
+    override fun buildCategoryList(): CategoryList =
+        throw UnsupportedOperationException("MemoryModelFactory does not support categories")
+
+    override fun buildTaskList(): TaskList =
+        throw UnsupportedOperationException("MemoryModelFactory does not support tasks")
+
+    override fun buildTaskCategoryList(): TaskCategoryList =
+        throw UnsupportedOperationException("MemoryModelFactory does not support task categories")
 }

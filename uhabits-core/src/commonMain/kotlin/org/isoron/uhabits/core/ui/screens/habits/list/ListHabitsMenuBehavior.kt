@@ -41,7 +41,7 @@ class ListHabitsMenuBehavior(
     }
 
     fun onBulkCreateHabit() {
-    screen.showBulkCreateHabitsDialog()
+        screen.showBulkCreateHabitsDialog()
     }
 
     fun onViewFAQ() {
@@ -153,6 +153,7 @@ class ListHabitsMenuBehavior(
         fun showManageCategoriesScreen()
         fun showSelectHabitTypeDialog()
         fun showBulkCreateHabitsDialog()
+
     }
 
     init {

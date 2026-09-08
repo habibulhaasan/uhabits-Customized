@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (C) 2016-2025 Ãlinson Santos Xavier <git@axavier.org>
  *
  * This file is part of Loop Habit Tracker.
@@ -20,4 +20,4 @@ package org.isoron.uhabits.core
 
 const val DATABASE_FILENAME = "uhabits.db"
 
-const val DATABASE_VERSION = 26
+const val DATABASE_VERSION = 28

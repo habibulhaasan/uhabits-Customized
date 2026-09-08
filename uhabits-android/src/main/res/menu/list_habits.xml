@@ -35,6 +35,11 @@
 
     <group android:id="@+id/actionItems">
         <item
+            android:id="@+id/actionSwitchToTasks"
+            android:title="@string/tasks"
+            app:showAsAction="always" />
+
+        <item
             android:id="@+id/actionCreateHabit"
             android:enabled="true"
             android:icon="?iconAdd"
@@ -101,7 +106,8 @@
             android:id="@+id/actionManageCategories"
             android:orderInCategory="90"
             android:title="@string/manage_categories"
-            app:showAsAction="never"/>
+            app:showAsAction="never" />
+
 
         <item
             android:id="@+id/actionSettings"

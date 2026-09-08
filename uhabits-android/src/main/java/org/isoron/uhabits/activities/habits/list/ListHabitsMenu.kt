@@ -153,6 +153,15 @@ class ListHabitsMenu(
                 return true
             }
 
+            R.id.actionSwitchToTasks -> {
+                val intent = android.content.Intent(
+                    activity,
+                    org.isoron.uhabits.activities.tasks.list.TaskListActivity::class.java
+                )
+                activity.startActivity(intent)
+                return true
+            }
+
             R.id.actionHideArchived -> {
                 behavior.onToggleShowArchived()
                 activity.invalidateOptionsMenu()

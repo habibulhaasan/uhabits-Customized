@@ -81,6 +81,22 @@
         </activity>
 
         <activity
+            android:name=".activities.tasks.list.TaskListActivity"
+            android:label="@string/tasks">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".activities.habits.list.ListHabitsActivity" />
+        </activity>
+
+        <activity
+            android:name=".activities.tasks.categories.TaskCategoryListActivity"
+            android:label="@string/manage_task_categories">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".activities.tasks.list.TaskListActivity" />
+        </activity>
+
+        <activity
             android:name=".activities.settings.SettingsActivity"
             android:label="@string/settings">
             <meta-data
@@ -220,6 +236,14 @@
 
         <receiver
             android:name=".receivers.ReminderReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".receivers.TaskReminderReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

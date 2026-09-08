@@ -22,11 +22,15 @@ import me.tatarka.inject.annotations.Inject
 import org.isoron.uhabits.core.database.CategoryRepository
 import org.isoron.uhabits.core.database.EntryRepository
 import org.isoron.uhabits.core.database.HabitRepository
+import org.isoron.uhabits.core.database.TaskCategoryRepository
+import org.isoron.uhabits.core.database.TaskRepository
 import org.isoron.uhabits.core.models.CategoryList
 import org.isoron.uhabits.core.models.EntryList
 import org.isoron.uhabits.core.models.ModelFactory
 import org.isoron.uhabits.core.models.ScoreList
 import org.isoron.uhabits.core.models.StreakList
+import org.isoron.uhabits.core.models.TaskCategoryList
+import org.isoron.uhabits.core.models.TaskList
 
 /**
  * Factory that provides models backed by an SQLite database.
@@ -38,6 +42,8 @@ class SQLModelFactory(
     val habitRepository = HabitRepository(database)
     val entryRepository = EntryRepository(database)
     val categoryRepository = CategoryRepository(database)
+    val taskRepository = TaskRepository(database)
+    val taskCategoryRepository = TaskCategoryRepository(database)
 
     override fun buildOriginalEntries() = SQLiteEntryList(entryRepository)
     override fun buildComputedEntries() = EntryList()
@@ -45,10 +51,9 @@ class SQLModelFactory(
     override fun buildScoreList() = ScoreList()
     override fun buildStreakList() = StreakList()
 
-    /**
-     * Categories aren't part of the [ModelFactory] interface (they're not a
-     * per-habit model like scores/streaks/entries), so this is exposed
-     * directly here and consumed by HabitsApplicationComponent.categoryList().
-     */
-    fun buildCategoryList() = CategoryList(categoryRepository, habitRepository)
+    override fun buildCategoryList() = CategoryList(categoryRepository, habitRepository)
+
+    override fun buildTaskList() = TaskList(taskRepository)
+
+    override fun buildTaskCategoryList() = TaskCategoryList(taskCategoryRepository)
 }

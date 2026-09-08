@@ -39,4 +39,7 @@ interface ModelFactory {
     fun buildHabitList(): HabitList
     fun buildScoreList(): ScoreList
     fun buildStreakList(): StreakList
+    fun buildCategoryList(): CategoryList
+    fun buildTaskList(): TaskList
+    fun buildTaskCategoryList(): TaskCategoryList
 }

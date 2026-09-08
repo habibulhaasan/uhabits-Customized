@@ -32,6 +32,8 @@ import org.isoron.uhabits.core.io.Logging
 import org.isoron.uhabits.core.models.CategoryList
 import org.isoron.uhabits.core.models.HabitList
 import org.isoron.uhabits.core.models.ModelFactory
+import org.isoron.uhabits.core.models.TaskCategoryList
+import org.isoron.uhabits.core.models.TaskList
 import org.isoron.uhabits.core.models.sqlite.SQLModelFactory
 import org.isoron.uhabits.core.models.sqlite.SQLiteHabitList
 import org.isoron.uhabits.core.preferences.Preferences
@@ -84,6 +86,8 @@ abstract class HabitsApplicationComponent(
     abstract val taskRunner: TaskRunner
     abstract val widgetPreferences: WidgetPreferences
     abstract val widgetUpdater: WidgetUpdater
+    abstract val taskList: TaskList
+    abstract val taskCategoryList: TaskCategoryList
 
     val db: AndroidDatabase
         get() = providedDb
@@ -134,6 +138,16 @@ abstract class HabitsApplicationComponent(
     @Provides
     open fun categoryList(modelFactory: ModelFactory): CategoryList =
         (modelFactory as SQLModelFactory).buildCategoryList()
+
+    @AppScope
+    @Provides
+    open fun taskList(modelFactory: ModelFactory): TaskList =
+        (modelFactory as SQLModelFactory).buildTaskList()
+
+    @AppScope
+    @Provides
+    open fun taskCategoryList(modelFactory: ModelFactory): TaskCategoryList =
+        (modelFactory as SQLModelFactory).buildTaskCategoryList()
 
     @AppScope
     @Provides
