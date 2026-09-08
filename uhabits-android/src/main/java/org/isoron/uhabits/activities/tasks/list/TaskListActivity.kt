@@ -77,7 +77,6 @@ class TaskListActivity : AppCompatActivity() {
         )
         binding.recyclerView.adapter = adapter
 
-        binding.fabAddTask.setOnClickListener { showAddTaskDialog() }
     }
 
     override fun onResume() {
@@ -94,6 +93,14 @@ class TaskListActivity : AppCompatActivity() {
         return when (item.itemId) {
             android.R.id.home -> {
                 finish()
+                true
+            }
+            R.id.actionAddTask -> {
+                showAddTaskDialog()
+                true
+            }
+            R.id.actionJumpToDate -> {
+                showCalendarJump()
                 true
             }
             R.id.actionManageTaskCategories -> {
@@ -167,6 +174,27 @@ class TaskListActivity : AppCompatActivity() {
 
     private fun showAddTaskDialog() { showTaskDialog(null) }
     private fun showEditTaskDialog(task: Task) { showTaskDialog(task) }
+
+    private fun showCalendarJump() {
+        val calendar = Calendar.getInstance()
+        val year = calendar.get(Calendar.YEAR)
+        val month = calendar.get(Calendar.MONTH)
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+        android.app.DatePickerDialog(this, { _, y, m, d ->
+            val cal = Calendar.getInstance()
+            cal.set(y, m, d, 0, 0, 0)
+            cal.set(Calendar.MILLISECOND, 0)
+            val selectedStart = cal.timeInMillis
+            
+            val targetPosition = adapter.findDatePosition(selectedStart)
+            if (targetPosition >= 0) {
+                binding.recyclerView.smoothScrollToPosition(targetPosition)
+            } else {
+                android.widget.Toast.makeText(this, getString(R.string.no_tasks_yet), android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }, year, month, day).show()
+    }
 
     private fun showTaskDialog(existingTask: Task?) {
         val dialogBinding = org.isoron.uhabits.databinding.DialogTaskEditBinding.inflate(layoutInflater)

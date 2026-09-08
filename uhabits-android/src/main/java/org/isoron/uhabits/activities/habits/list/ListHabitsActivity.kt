@@ -100,6 +100,10 @@ class ListHabitsActivity : AppCompatActivity(), Preferences.Listener {
         Thread.setDefaultUncaughtExceptionHandler(BaseExceptionHandler(this))
         component.listHabitsBehavior.onStartup()
         rootView.applyRootViewInsets()
+        if (savedInstanceState == null && prefs.defaultStartupScreen == "TASKS") {
+            startActivity(Intent(this, org.isoron.uhabits.activities.tasks.list.TaskListActivity::class.java))
+        }
+
         setContentView(rootView)
     }
 

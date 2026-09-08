@@ -102,6 +102,12 @@ open class Preferences(private val storage: Storage) {
             storage.putBoolean("pref_show_completed", showCompleted)
         }
 
+    open var defaultStartupScreen: String
+        get() = storage.getString("pref_default_startup_screen", "HABITS")
+        set(value) {
+            storage.putString("pref_default_startup_screen", value)
+        }
+
     open var theme: Int
         get() = storage.getInt("pref_theme", ThemeSwitcher.THEME_AUTOMATIC)
         set(theme) {

@@ -94,4 +94,14 @@
         <item>51</item>
         <item>0</item>
     </string-array>
+    <string-array name="startup_screen_entries">
+        <item>@string/habits</item>
+        <item>@string/tasks</item>
+    </string-array>
+
+    <string-array name="startup_screen_values">
+        <item>HABITS</item>
+        <item>TASKS</item>
+    </string-array>
+
 </resources>

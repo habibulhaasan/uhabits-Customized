@@ -68,64 +68,56 @@ class TaskCardView(
     var onClick: (Task) -> Unit = {}
     var onLongClick: (Task) -> Unit = {}
 
-    private val scoreRing: RingView
     private val label: TextView
-    private val infoPanel: LinearLayout
-    private val dueDateText: TextView
     private val descriptionText: TextView
+    private val dueDateText: TextView
+    private val middleContainer: LinearLayout
     private val checkmarkView: TaskCheckmarkView
     private val innerFrame: LinearLayout
 
     init {
-        scoreRing = RingView(context).apply {
-            val thickness = dp(3f)
-            val margin = dp(8f).toInt()
-            val ringSize = dp(15f).toInt()
-            layoutParams = LinearLayout.LayoutParams(ringSize, ringSize).apply {
-                setMargins(margin, 0, margin, 0)
-                gravity = Gravity.CENTER
+        checkmarkView = TaskCheckmarkView(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                dp(48f).toInt(),
+                MATCH_PARENT
+            ).apply {
+                gravity = Gravity.CENTER_VERTICAL
             }
-            setThickness(thickness)
-            setPercentage(1.0f)
-            setPrecision(1.0f / 16)
         }
 
         label = TextView(context).apply {
             maxLines = 2
             ellipsize = TextUtils.TruncateAt.END
-            layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
             textSize = 17f
+        }
+
+        descriptionText = TextView(context).apply {
+            maxLines = 2
+            ellipsize = TextUtils.TruncateAt.END
+            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
+            textSize = 14f
+            alpha = 0.6f
+            visibility = View.GONE
+        }
+
+        middleContainer = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply {
+                setMargins(0, dp(8f).toInt(), dp(8f).toInt(), dp(8f).toInt())
+            }
+            addView(label)
+            addView(descriptionText)
         }
 
         dueDateText = TextView(context).apply {
             maxLines = 1
-            textSize = 12f
-            alpha = 0.7f
-        }
-
-        descriptionText = TextView(context).apply {
-            maxLines = 1
-            ellipsize = TextUtils.TruncateAt.END
-            textSize = 12f
-            alpha = 0.5f
-        }
-
-        infoPanel = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_VERTICAL or Gravity.END
+            textSize = 13f
+            alpha = 0.6f
             layoutParams = LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
-                setMargins(dp(4f).toInt(), 0, dp(4f).toInt(), 0)
-            }
-            addView(dueDateText)
-            addView(descriptionText)
-        }
-
-        checkmarkView = TaskCheckmarkView(context).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                dp(40f).toInt(),
-                dp(40f).toInt()
-            ).apply {
-                gravity = Gravity.CENTER
+                gravity = Gravity.CENTER_VERTICAL
+                setMargins(0, 0, dp(16f).toInt(), 0)
             }
         }
 
@@ -134,6 +126,7 @@ class TaskCardView(
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
             elevation = dp(1f)
+            minimumHeight = dp(48f).toInt()
 
             background = android.graphics.drawable.GradientDrawable().apply {
                 cornerRadius = dp(2f)
@@ -146,10 +139,9 @@ class TaskCardView(
                 typedArray.recycle()
             }
 
-            addView(scoreRing)
-            addView(label)
-            addView(infoPanel)
             addView(checkmarkView)
+            addView(middleContainer)
+            addView(dueDateText)
         }
 
         clipToPadding = false
@@ -179,19 +171,17 @@ class TaskCardView(
             label.setTextColor(accentColor)
         }
 
-        // Score ring
-        scoreRing.setColor(accentColor)
-        scoreRing.setPercentage(if (task.isCompleted) 1.0f else 0.25f)
+        // No score ring
 
-        // Due date
-        if (task.dueDate != null) {
-            val sdf = SimpleDateFormat("MMM dd", Locale.getDefault())
-            dueDateText.text = sdf.format(Date(task.dueDate!!))
+        // Reminder time
+        if (task.reminderTime != null) {
+            val timeFormat = android.text.format.DateFormat.getTimeFormat(context)
+            dueDateText.text = timeFormat.format(java.util.Date(task.reminderTime!!))
             dueDateText.visibility = View.VISIBLE
 
-            // Highlight overdue in a faded state
+            // Highlight if past due (optional, keeping opacity consistent)
             val now = System.currentTimeMillis()
-            if (!task.isCompleted && task.dueDate!! < now) {
+            if (!task.isCompleted && task.reminderTime!! < now) {
                 dueDateText.alpha = 0.5f
             } else {
                 dueDateText.alpha = 0.7f

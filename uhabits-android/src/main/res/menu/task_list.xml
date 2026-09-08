@@ -2,12 +2,22 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/actionAddTask"
+        android:icon="?iconAdd"
+        android:title="@string/add_task"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/actionJumpToDate"
+        android:icon="@drawable/ic_calendar"
+        android:title="@string/jump_to_date"
+        app:showAsAction="always" />
+    <item
         android:id="@+id/actionSwitchToHabits"
+        android:icon="@drawable/ic_habits"
         android:title="@string/habits"
         app:showAsAction="always" />
     <item
         android:id="@+id/actionManageTaskCategories"
-        android:icon="?iconAdd"
         android:title="@string/manage_task_categories"
         app:showAsAction="never" />
 </menu>
