@@ -79,9 +79,48 @@ class TaskListActivity : AppCompatActivity() {
                 }
                 R.id.actionComplete -> {
                     selectedTaskIds.forEach { id ->
-                        taskList.getAll().find { it.id == id }?.let { t -> 
-                            t.isCompleted = true
-                            taskList.update(t) 
+                        taskList.getAll().find { it.id == id }?.let { task -> 
+                            task.isCompleted = true
+                            taskList.update(task)
+                            // Generate next occurrence for recurring tasks
+                            if (task.recurrenceType > 0 && task.dueDate != null) {
+                                val cal = java.util.Calendar.getInstance().apply { timeInMillis = task.dueDate!! }
+                                when (task.recurrenceType) {
+                                    1 -> cal.add(java.util.Calendar.DAY_OF_YEAR, 1) // Daily
+                                    2 -> {
+                                        val bitmask = task.recurrenceValue
+                                        if (bitmask > 0) {
+                                            var daysAdded = 0
+                                            do {
+                                                cal.add(java.util.Calendar.DAY_OF_YEAR, 1)
+                                                daysAdded++
+                                                val dow = cal.get(java.util.Calendar.DAY_OF_WEEK)
+                                            } while ((bitmask and (1 shl dow)) == 0 && daysAdded < 7)
+                                        } else {
+                                            cal.add(java.util.Calendar.DAY_OF_YEAR, 7) // Fallback
+                                        }
+                                    }
+                                    3 -> cal.add(java.util.Calendar.MONTH, 1) // Monthly
+                                    4 -> cal.add(java.util.Calendar.YEAR, 1) // Yearly
+                                }
+                                
+                                val nextDueDate = cal.timeInMillis
+                                val nextTask = Task(
+                                    title = task.title,
+                                    description = task.description,
+                                    categoryId = task.categoryId,
+                                    dueDate = nextDueDate,
+                                    reminderTime = if (task.reminderTime != null) {
+                                        val rCal = java.util.Calendar.getInstance().apply { timeInMillis = task.reminderTime!! }
+                                        val daysDiff = ((nextDueDate - task.dueDate!!) / (24 * 60 * 60 * 1000)).toInt()
+                                        rCal.add(java.util.Calendar.DAY_OF_YEAR, daysDiff)
+                                        rCal.timeInMillis
+                                    } else null,
+                                    recurrenceType = task.recurrenceType,
+                                    recurrenceValue = task.recurrenceValue
+                                )
+                                taskList.add(nextTask)
+                            }
                         }
                     }
                     mode.finish()
@@ -316,6 +355,19 @@ class TaskListActivity : AppCompatActivity() {
             }
         }
 
+        if (isSingleDayView) {
+            val dateFormat = java.text.SimpleDateFormat("EEEE, MMM dd", java.util.Locale.getDefault())
+            val dateString = when (currentDayOffset) {
+                0 -> getString(R.string.today)
+                1 -> getString(R.string.tomorrow)
+                -1 -> getString(R.string.yesterday)
+                else -> dateFormat.format(java.util.Date(currentViewDayStart))
+            }
+            supportActionBar?.title = dateString
+        } else {
+            supportActionBar?.title = getString(R.string.tasks)
+        }
+
         adapter = TaskAdapter(
             tasks = displayTasks,
             categories = categories,
@@ -331,17 +383,42 @@ class TaskListActivity : AppCompatActivity() {
                 task.isCompleted = isChecked
                 taskList.update(task)
                 // If completing a recurring task, create the next occurrence
-                if (isChecked && task.recurrenceDays > 0 && task.dueDate != null) {
-                    val nextDueDate = task.dueDate!! + task.recurrenceDays.toLong() * 24 * 60 * 60 * 1000
+                if (isChecked && task.recurrenceType > 0 && task.dueDate != null) {
+                    val cal = java.util.Calendar.getInstance().apply { timeInMillis = task.dueDate!! }
+                    when (task.recurrenceType) {
+                        1 -> cal.add(java.util.Calendar.DAY_OF_YEAR, 1) // Daily
+                        2 -> {
+                            // Weekly: find next day in bitmask
+                            val bitmask = task.recurrenceValue
+                            if (bitmask > 0) {
+                                var daysAdded = 0
+                                do {
+                                    cal.add(java.util.Calendar.DAY_OF_YEAR, 1)
+                                    daysAdded++
+                                    val dow = cal.get(java.util.Calendar.DAY_OF_WEEK)
+                                } while ((bitmask and (1 shl dow)) == 0 && daysAdded < 7)
+                            } else {
+                                cal.add(java.util.Calendar.DAY_OF_YEAR, 7) // Fallback
+                            }
+                        }
+                        3 -> cal.add(java.util.Calendar.MONTH, 1) // Monthly
+                        4 -> cal.add(java.util.Calendar.YEAR, 1) // Yearly
+                    }
+                    
+                    val nextDueDate = cal.timeInMillis
                     val nextTask = Task(
                         title = task.title,
                         description = task.description,
                         categoryId = task.categoryId,
                         dueDate = nextDueDate,
                         reminderTime = if (task.reminderTime != null) {
-                            task.reminderTime!! + task.recurrenceDays.toLong() * 24 * 60 * 60 * 1000
+                            val rCal = java.util.Calendar.getInstance().apply { timeInMillis = task.reminderTime!! }
+                            val daysDiff = ((nextDueDate - task.dueDate!!) / (24 * 60 * 60 * 1000)).toInt()
+                            rCal.add(java.util.Calendar.DAY_OF_YEAR, daysDiff)
+                            rCal.timeInMillis
                         } else null,
-                        recurrenceDays = task.recurrenceDays
+                        recurrenceType = task.recurrenceType,
+                        recurrenceValue = task.recurrenceValue
                     )
                     taskList.add(nextTask)
                 }
@@ -375,18 +452,6 @@ class TaskListActivity : AppCompatActivity() {
             actionMode?.title = "${selectedTaskIds.size} selected"
             adapter.selectedTaskIds = selectedTaskIds
         }
-    }
-
-    private fun showDeleteConfirm(task: Task) {
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(getString(R.string.delete_task))
-            .setMessage(getString(R.string.delete_task_confirmation))
-            .setPositiveButton(R.string.delete) { _, _ ->
-                taskList.remove(task)
-                refreshTasks()
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
     }
 
     private fun showAddTaskDialog() { showTaskDialog(null) }
@@ -463,19 +528,58 @@ class TaskListActivity : AppCompatActivity() {
                 .show()
         }
 
-        val recurrenceOptions = listOf("None" to 0, "Daily" to 1, "Weekly" to 7, "Monthly" to 30, "Yearly" to 365)
-        var selectedRecurrenceDays = existingTask?.recurrenceDays ?: 0
-        val recurrenceLabel = recurrenceOptions.find { it.second == selectedRecurrenceDays }?.first 
-            ?: "Every $selectedRecurrenceDays days"
-        dialogBinding.taskRecurrenceInput.text = recurrenceLabel
+        val recurrenceOptions = listOf("None" to 0, "Daily" to 1, "Weekly" to 2, "Monthly" to 3, "Yearly" to 4)
+        var selectedRecurrenceType = existingTask?.recurrenceType ?: 0
+        var selectedRecurrenceValue = existingTask?.recurrenceValue ?: 0
+
+        fun updateRecurrenceLabel() {
+            if (selectedRecurrenceType == 2 && selectedRecurrenceValue > 0) {
+                val days = mutableListOf<String>()
+                val weekDays = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+                for (i in 0..6) {
+                    if ((selectedRecurrenceValue and (1 shl (i + 1))) != 0) {
+                        days.add(weekDays[i])
+                    }
+                }
+                dialogBinding.taskRecurrenceInput.text = "Weekly (${days.joinToString(", ")})"
+            } else {
+                val recurrenceLabel = recurrenceOptions.find { it.second == selectedRecurrenceType }?.first 
+                    ?: "None"
+                dialogBinding.taskRecurrenceInput.text = recurrenceLabel
+            }
+        }
+        updateRecurrenceLabel()
 
         dialogBinding.taskRecurrenceInput.setOnClickListener {
             val names = recurrenceOptions.map { it.first }.toTypedArray()
             androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle(getString(R.string.repeat_every_days))
                 .setItems(names) { dialog, which ->
-                    selectedRecurrenceDays = recurrenceOptions[which].second
-                    dialogBinding.taskRecurrenceInput.text = names[which]
+                    selectedRecurrenceType = recurrenceOptions[which].second
+                    if (selectedRecurrenceType == 2) {
+                        // Show days of week picker
+                        val weekDays = arrayOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+                        val checkedItems = BooleanArray(7) { i -> (selectedRecurrenceValue and (1 shl (i + 1))) != 0 }
+                        androidx.appcompat.app.AlertDialog.Builder(this)
+                            .setTitle("Select Days")
+                            .setMultiChoiceItems(weekDays, checkedItems) { _, whichDay, isChecked ->
+                                checkedItems[whichDay] = isChecked
+                            }
+                            .setPositiveButton(android.R.string.ok) { d, _ ->
+                                var newValue = 0
+                                for (i in 0..6) {
+                                    if (checkedItems[i]) newValue = newValue or (1 shl (i + 1))
+                                }
+                                selectedRecurrenceValue = newValue
+                                updateRecurrenceLabel()
+                                d.dismiss()
+                            }
+                            .setNegativeButton(android.R.string.cancel, null)
+                            .show()
+                    } else {
+                        selectedRecurrenceValue = 0
+                        updateRecurrenceLabel()
+                    }
                     dialog.dismiss()
                 }
                 .show()
@@ -533,7 +637,6 @@ class TaskListActivity : AppCompatActivity() {
                 }
 
                 val categoryId = if (selectedCategoryIndex == 0) null else categories[selectedCategoryIndex - 1].id
-                val recurrenceDays = selectedRecurrenceDays
 
                 if (existingTask == null) {
                     val titles = title.split("\n").map { it.trim() }.filter { it.isNotEmpty() }
@@ -544,7 +647,8 @@ class TaskListActivity : AppCompatActivity() {
                             categoryId = categoryId,
                             dueDate = selectedDueDate,
                             reminderTime = selectedReminderTime,
-                            recurrenceDays = recurrenceDays
+                            recurrenceType = selectedRecurrenceType,
+                            recurrenceValue = selectedRecurrenceValue
                         )
                         taskList.add(task)
                     }
@@ -554,7 +658,8 @@ class TaskListActivity : AppCompatActivity() {
                     existingTask.categoryId = categoryId
                     existingTask.dueDate = selectedDueDate
                     existingTask.reminderTime = selectedReminderTime
-                    existingTask.recurrenceDays = recurrenceDays
+                    existingTask.recurrenceType = selectedRecurrenceType
+                    existingTask.recurrenceValue = selectedRecurrenceValue
                     taskList.update(existingTask)
                 }
                 dialog.dismiss()

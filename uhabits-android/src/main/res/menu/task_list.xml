@@ -2,6 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/actionSwitchToHabits"
+        android:icon="@drawable/ic_habits"
+        android:title="@string/habits"
+        app:showAsAction="always" />
+    <item
         android:id="@+id/actionAddTask"
         android:icon="?iconAdd"
         android:title="@string/add_task"
@@ -12,15 +17,10 @@
         android:title="@string/jump_to_date"
         app:showAsAction="always" />
     <item
-        android:id="@+id/actionSwitchToHabits"
-        android:icon="@drawable/ic_habits"
-        android:title="@string/habits"
-        app:showAsAction="always" />
-    <item
         android:id="@+id/actionTaskFilter"
         android:icon="?iconFilter"
         android:title="@string/filter"
-        app:showAsAction="ifRoom">
+        app:showAsAction="always">
         <menu>
             <item
                 android:id="@+id/actionTaskHideCompleted"

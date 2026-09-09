@@ -61,7 +61,9 @@ class HabitsDatabaseOpener(
                 reminder_time integer,
                 completed integer not null default 0,
                 position integer not null default 0,
-                recurrence_days integer not null default 0
+                recurrence_days integer not null default 0,
+                recurrence_type integer default 0,
+                recurrence_value integer default 0
             )
         """)
     }

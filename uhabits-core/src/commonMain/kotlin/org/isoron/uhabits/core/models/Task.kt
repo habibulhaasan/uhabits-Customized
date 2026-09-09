@@ -31,7 +31,8 @@ data class Task(
     var reminderTime: Long? = null,
     var isCompleted: Boolean = false,
     var position: Int = 0,
-    var recurrenceDays: Int = 0,
+    var recurrenceType: Int = 0,
+    var recurrenceValue: Int = 0,
     val observable: ModelObservable = ModelObservable()
 ) {
     override fun equals(other: Any?): Boolean {
@@ -46,13 +47,14 @@ data class Task(
         if (reminderTime != other.reminderTime) return false
         if (isCompleted != other.isCompleted) return false
         if (position != other.position) return false
-        if (recurrenceDays != other.recurrenceDays) return false
+        if (recurrenceType != other.recurrenceType) return false
+        if (recurrenceValue != other.recurrenceValue) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = (id?.hashCode() ?: 0)
+        var result = id?.hashCode() ?: 0
         result = 31 * result + title.hashCode()
         result = 31 * result + description.hashCode()
         result = 31 * result + (categoryId?.hashCode() ?: 0)
@@ -60,7 +62,8 @@ data class Task(
         result = 31 * result + (reminderTime?.hashCode() ?: 0)
         result = 31 * result + isCompleted.hashCode()
         result = 31 * result + position
-        result = 31 * result + recurrenceDays
+        result = 31 * result + recurrenceType
+        result = 31 * result + recurrenceValue
         return result
     }
 

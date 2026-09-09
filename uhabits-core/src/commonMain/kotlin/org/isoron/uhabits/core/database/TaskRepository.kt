@@ -14,60 +14,69 @@ data class TaskData(
     var reminderTime: Long? = null,
     var completed: Int = 0,
     var position: Int = 0,
-    var recurrenceDays: Int = 0
+    var recurrenceType: Int = 0,
+    var recurrenceValue: Int = 0
 )
 
 class TaskRepository(private val db: Database) {
     private val findAllStmt by lazy {
         db.prepareStatement(
-            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_days
+            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_type, recurrence_value
                FROM Tasks ORDER BY position"""
         )
     }
 
     private val findByCategoryStmt by lazy {
         db.prepareStatement(
-            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_days
+            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_type, recurrence_value
                FROM Tasks WHERE category_id IS ? OR category_id = ? ORDER BY position"""
         )
     }
 
     private val findUpcomingStmt by lazy {
         db.prepareStatement(
-            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_days
+            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_type, recurrence_value
                FROM Tasks WHERE completed = 0 AND due_date IS NOT NULL AND due_date >= ? AND due_date <= ? ORDER BY due_date"""
         )
     }
 
     private val findOverdueStmt by lazy {
         db.prepareStatement(
-            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_days
+            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_type, recurrence_value
                FROM Tasks WHERE completed = 0 AND due_date IS NOT NULL AND due_date < ? ORDER BY due_date"""
         )
     }
 
     private val insertStmt by lazy {
         db.prepareStatement(
-            """INSERT INTO Tasks(title, description, category_id, due_date, reminder_time, completed, position, recurrence_days)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
+            """INSERT INTO Tasks(title, description, category_id, due_date, reminder_time, completed, position, recurrence_type, recurrence_value)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         )
     }
 
     private val insertWithIdStmt by lazy {
         db.prepareStatement(
-            """INSERT INTO Tasks(id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_days)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+            """INSERT INTO Tasks(id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_type, recurrence_value)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         )
     }
 
     private val updateStmt by lazy {
         db.prepareStatement(
-            """UPDATE Tasks SET title=?, description=?, category_id=?, due_date=?, reminder_time=?, completed=?, position=?, recurrence_days=? WHERE id=?"""
+            """UPDATE Tasks SET title=?, description=?, category_id=?, due_date=?, reminder_time=?, completed=?, position=?, recurrence_type=?, recurrence_value=? WHERE id=?"""
         )
     }
 
     private val deleteStmt by lazy {
-        db.prepareStatement("DELETE FROM Tasks WHERE id = ?")
+        db.prepareStatement("DELETE FROM Tasks WHERE id=?")
+    }
+
+    private val deleteAllStmt by lazy {
+        db.prepareStatement("DELETE FROM Tasks")
+    }
+
+    private val maxPositionStmt by lazy {
+        db.prepareStatement("SELECT MAX(position) FROM Tasks")
     }
 
     fun findAll(): List<TaskData> {
@@ -85,7 +94,7 @@ class TaskRepository(private val db: Database) {
             findByCategoryStmt.bindNull(1)
             findByCategoryStmt.bindNull(2)
         } else {
-            findByCategoryStmt.bindLong(1, categoryId)
+            findByCategoryStmt.bindNull(1) // Not IS null
             findByCategoryStmt.bindLong(2, categoryId)
         }
         val results = mutableListOf<TaskData>()
@@ -133,7 +142,7 @@ class TaskRepository(private val db: Database) {
     fun update(data: TaskData) {
         updateStmt.reset()
         bindForInsert(updateStmt, data)
-        updateStmt.bindLong(9, data.id!!)
+        updateStmt.bindLong(10, data.id!!)
         updateStmt.step()
     }
 
@@ -144,15 +153,15 @@ class TaskRepository(private val db: Database) {
     }
 
     private fun bindForInsert(stmt: PreparedStatement, data: TaskData, offset: Int = 0) {
-        val o = offset
-        stmt.bindText(1 + o, data.title)
-        stmt.bindText(2 + o, data.description)
-        if (data.categoryId != null) stmt.bindLong(3 + o, data.categoryId!!) else stmt.bindNull(3 + o)
-        if (data.dueDate != null) stmt.bindLong(4 + o, data.dueDate!!) else stmt.bindNull(4 + o)
-        if (data.reminderTime != null) stmt.bindLong(5 + o, data.reminderTime!!) else stmt.bindNull(5 + o)
-        stmt.bindInt(6 + o, data.completed)
-        stmt.bindInt(7 + o, data.position)
-        stmt.bindInt(8 + o, data.recurrenceDays)
+        stmt.bindText(1 + offset, data.title)
+        stmt.bindText(2 + offset, data.description)
+        if (data.categoryId != null) stmt.bindLong(3 + offset, data.categoryId!!) else stmt.bindNull(3 + offset)
+        if (data.dueDate != null) stmt.bindLong(4 + offset, data.dueDate!!) else stmt.bindNull(4 + offset)
+        if (data.reminderTime != null) stmt.bindLong(5 + offset, data.reminderTime!!) else stmt.bindNull(5 + offset)
+        stmt.bindInt(6 + offset, data.completed)
+        stmt.bindInt(7 + offset, data.position)
+        stmt.bindInt(8 + offset, data.recurrenceType)
+        stmt.bindInt(9 + offset, data.recurrenceValue)
     }
 
     private fun readRow(stmt: PreparedStatement): TaskData {
@@ -165,7 +174,8 @@ class TaskRepository(private val db: Database) {
             reminderTime = stmt.getLongOrNull(5),
             completed = stmt.getInt(6),
             position = stmt.getInt(7),
-            recurrenceDays = stmt.getInt(8)
+            recurrenceType = stmt.getInt(8),
+            recurrenceValue = stmt.getInt(9)
         )
     }
 }
