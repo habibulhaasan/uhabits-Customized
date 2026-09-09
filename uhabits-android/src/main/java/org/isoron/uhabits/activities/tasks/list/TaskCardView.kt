@@ -146,8 +146,8 @@ class TaskCardView(
 
         clipToPadding = false
         layoutParams = LayoutParams(MATCH_PARENT, WRAP_CONTENT)
-        val margin = dp(4f).toInt()
-        setPadding(margin, margin, margin, margin)
+        val margin = dp(3f).toInt()
+        setPadding(margin, 0, margin, margin)
         addView(innerFrame)
     }
 

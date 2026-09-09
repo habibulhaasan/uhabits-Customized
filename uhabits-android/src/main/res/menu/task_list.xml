@@ -17,6 +17,26 @@
         android:title="@string/habits"
         app:showAsAction="always" />
     <item
+        android:id="@+id/actionTaskFilter"
+        android:icon="?iconFilter"
+        android:title="@string/filter"
+        app:showAsAction="ifRoom">
+        <menu>
+            <item
+                android:id="@+id/actionTaskHideCompleted"
+                android:checkable="true"
+                android:title="@string/hide_completed" />
+            <item
+                android:id="@+id/actionTaskShowAll"
+                android:checkable="true"
+                android:title="@string/show_all_tasks" />
+            <item
+                android:id="@+id/actionTaskShowUpcoming"
+                android:checkable="true"
+                android:title="@string/show_upcoming_tasks" />
+        </menu>
+    </item>
+    <item
         android:id="@+id/actionManageTaskCategories"
         android:title="@string/manage_task_categories"
         app:showAsAction="never" />

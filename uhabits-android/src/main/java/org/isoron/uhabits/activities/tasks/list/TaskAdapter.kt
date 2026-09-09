@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import org.isoron.uhabits.R
 import org.isoron.uhabits.core.models.Task
 import org.isoron.uhabits.core.models.TaskCategory
+import org.isoron.uhabits.core.models.PaletteColor
 import org.isoron.uhabits.core.ui.views.Theme
 import org.isoron.platform.gui.toInt
 import java.text.SimpleDateFormat
@@ -27,8 +28,14 @@ class TaskAdapter(
     private val theme: Theme,
     private val onTaskClick: (Task) -> Unit,
     private val onTaskComplete: (Task, Boolean) -> Unit,
-    private val onTaskDelete: (Task) -> Unit
+    private val onTaskLongClick: (Task) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    var selectedTaskIds: Set<Long> = emptySet()
+        set(value) {
+            field = value
+            notifyDataSetChanged()
+        }
 
     private var items: List<TaskListItem> = emptyList()
 
@@ -169,7 +176,7 @@ class TaskAdapter(
         private val titleView: TextView = view.findViewById(R.id.dateHeaderTitle)
         fun bind(item: TaskListItem.DateHeader) {
             titleView.text = item.dateString
-            titleView.alpha = if (item.isUpcoming) 0.85f else 1.0f
+            titleView.alpha = if (item.isUpcoming) 0.4f else 1.0f
         }
     }
 
@@ -204,10 +211,17 @@ class TaskAdapter(
                 onTaskClick(t)
             }
             cardView.onLongClick = { t ->
-                onTaskDelete(t)
+                onTaskLongClick(t)
             }
             cardView.bind(item.task, item.category)
-            cardView.alpha = if (item.isUpcoming) 0.85f else 1.0f
+            cardView.alpha = if (item.isUpcoming) 0.4f else 1.0f
+            
+            val isSelected = selectedTaskIds.contains(item.task.id)
+            if (isSelected) {
+                cardView.background = android.graphics.drawable.ColorDrawable(theme.color(PaletteColor(3)).toInt())
+            } else {
+                cardView.background = null
+            }
         }
     }
 

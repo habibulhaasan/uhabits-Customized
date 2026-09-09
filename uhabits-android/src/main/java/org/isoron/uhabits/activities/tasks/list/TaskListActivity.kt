@@ -23,6 +23,7 @@ import android.app.TimePickerDialog
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import androidx.recyclerview.widget.RecyclerView
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -46,6 +47,58 @@ class TaskListActivity : AppCompatActivity() {
 
     private var limitTo7Days = true
 
+    private var hideCompleted: Boolean = false
+    private var showAllTasks: Boolean = false
+    private var showUpcomingTasks: Boolean = true
+    
+    private var currentDayOffset: Int = 0
+    private lateinit var gestureDetector: android.view.GestureDetector
+
+    private var actionMode: androidx.appcompat.view.ActionMode? = null
+    private val selectedTaskIds = mutableSetOf<Long>()
+
+    private val actionModeCallback = object : androidx.appcompat.view.ActionMode.Callback {
+        override fun onCreateActionMode(mode: androidx.appcompat.view.ActionMode, menu: Menu): Boolean {
+            mode.menuInflater.inflate(R.menu.task_list_cab, menu)
+            return true
+        }
+
+        override fun onPrepareActionMode(mode: androidx.appcompat.view.ActionMode, menu: Menu): Boolean {
+            return false
+        }
+
+        override fun onActionItemClicked(mode: androidx.appcompat.view.ActionMode, item: MenuItem): Boolean {
+            return when (item.itemId) {
+                R.id.actionDelete -> {
+                    selectedTaskIds.forEach { id ->
+                        taskList.getAll().find { it.id == id }?.let { taskList.remove(it) }
+                    }
+                    mode.finish()
+                    refreshTasks()
+                    true
+                }
+                R.id.actionComplete -> {
+                    selectedTaskIds.forEach { id ->
+                        taskList.getAll().find { it.id == id }?.let { t -> 
+                            t.isCompleted = true
+                            taskList.update(t) 
+                        }
+                    }
+                    mode.finish()
+                    refreshTasks()
+                    true
+                }
+                else -> false
+            }
+        }
+
+        override fun onDestroyActionMode(mode: androidx.appcompat.view.ActionMode) {
+            actionMode = null
+            selectedTaskIds.clear()
+            adapter.selectedTaskIds = selectedTaskIds
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val component = (application as HabitsApplication).component
@@ -53,6 +106,11 @@ class TaskListActivity : AppCompatActivity() {
         taskCategoryList = component.taskCategoryList
         themeSwitcher = AndroidThemeSwitcher(this, component.preferences)
         themeSwitcher.apply()
+
+        val prefs = getPreferences(android.content.Context.MODE_PRIVATE)
+        hideCompleted = prefs.getBoolean("hideCompleted", false)
+        showAllTasks = prefs.getBoolean("showAllTasks", false)
+        showUpcomingTasks = prefs.getBoolean("showUpcomingTasks", true)
 
         binding = ActivityTaskListBinding.inflate(layoutInflater)
         binding.root.setupToolbar(
@@ -65,21 +123,71 @@ class TaskListActivity : AppCompatActivity() {
         binding.root.applyRootViewInsets()
         setContentView(binding.root)
 
+        gestureDetector = android.view.GestureDetector(this, object : android.view.GestureDetector.SimpleOnGestureListener() {
+            private val SWIPE_THRESHOLD = 100
+            private val SWIPE_VELOCITY_THRESHOLD = 100
+
+            override fun onFling(e1: android.view.MotionEvent?, e2: android.view.MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                val isSingleDayView = !showAllTasks && !showUpcomingTasks
+                if (!isSingleDayView) return false
+
+                if (e1 != null) {
+                    val diffY = e2.y - e1.y
+                    val diffX = e2.x - e1.x
+                    if (Math.abs(diffX) > Math.abs(diffY)) {
+                        if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                            if (diffX > 0) {
+                                // Swipe right - previous day
+                                currentDayOffset--
+                                refreshTasks()
+                            } else {
+                                // Swipe left - next day
+                                currentDayOffset++
+                                refreshTasks()
+                            }
+                            return true
+                        }
+                    }
+                }
+                return false
+            }
+        })
+
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = TaskAdapter(
             tasks = emptyList(),
             categories = emptyList(),
             theme = themeSwitcher.currentTheme,
-            onTaskClick = { showEditTaskDialog(it) },
+            onTaskClick = { task ->
+                if (actionMode != null) {
+                    task.id?.let { toggleSelection(it) }
+                } else {
+                    showEditTaskDialog(task)
+                }
+            },
             onTaskComplete = { task, isChecked ->
                 task.isCompleted = isChecked
                 taskList.update(task)
                 refreshTasks()
             },
-            onTaskDelete = { task -> showDeleteConfirm(task) }
+            onTaskLongClick = { task ->
+                if (actionMode == null) {
+                    actionMode = startSupportActionMode(actionModeCallback)
+                }
+                task.id?.let { toggleSelection(it) }
+            }
         )
         binding.recyclerView.adapter = adapter
-
+        binding.recyclerView.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: android.view.MotionEvent): Boolean {
+                gestureDetector.onTouchEvent(e)
+                return false
+            }
+        })
+        binding.recyclerView.setOnTouchListener { _, event ->
+            gestureDetector.onTouchEvent(event)
+            false
+        }
     }
 
     override fun onResume() {
@@ -89,13 +197,38 @@ class TaskListActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.task_list, menu)
+        menu?.findItem(R.id.actionTaskHideCompleted)?.isChecked = hideCompleted
+        menu?.findItem(R.id.actionTaskShowAll)?.isChecked = showAllTasks
+        menu?.findItem(R.id.actionTaskShowUpcoming)?.isChecked = showUpcomingTasks
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val prefs = getPreferences(android.content.Context.MODE_PRIVATE)
         return when (item.itemId) {
             android.R.id.home -> {
                 finish()
+                true
+            }
+            R.id.actionTaskHideCompleted -> {
+                hideCompleted = !hideCompleted
+                prefs.edit().putBoolean("hideCompleted", hideCompleted).apply()
+                invalidateOptionsMenu()
+                refreshTasks()
+                true
+            }
+            R.id.actionTaskShowAll -> {
+                showAllTasks = !showAllTasks
+                prefs.edit().putBoolean("showAllTasks", showAllTasks).apply()
+                invalidateOptionsMenu()
+                refreshTasks()
+                true
+            }
+            R.id.actionTaskShowUpcoming -> {
+                showUpcomingTasks = !showUpcomingTasks
+                prefs.edit().putBoolean("showUpcomingTasks", showUpcomingTasks).apply()
+                invalidateOptionsMenu()
+                refreshTasks()
                 true
             }
             R.id.actionAddTask -> {
@@ -141,22 +274,59 @@ class TaskListActivity : AppCompatActivity() {
                 }
         )
 
-        val sevenDaysFromNow = now + 7L * 24 * 60 * 60 * 1000
-        val displayTasks = if (limitTo7Days) {
-            sortedTasks.filter { task ->
-                if (task.isCompleted) true
-                else if (task.dueDate == null) true
-                else task.dueDate!! <= sevenDaysFromNow
-            }
-        } else {
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = now
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val todayStart = calendar.timeInMillis
+        
+        calendar.add(Calendar.DAY_OF_YEAR, currentDayOffset)
+        val currentViewDayStart = calendar.timeInMillis
+        calendar.add(Calendar.DAY_OF_YEAR, 1)
+        val currentViewDayEnd = calendar.timeInMillis
+        
+        calendar.timeInMillis = todayStart
+        calendar.add(Calendar.DAY_OF_YEAR, 7)
+        val sevenDaysFromNow = calendar.timeInMillis
+
+        val isSingleDayView = !showAllTasks && !showUpcomingTasks
+
+        val displayTasks = if (!limitTo7Days) {
+            // Calendar jump - show everything
             sortedTasks
+        } else {
+            sortedTasks.filter { task ->
+                if (hideCompleted && task.isCompleted) return@filter false
+                if (task.dueDate == null) return@filter true // Keep tasks without due date
+                
+                if (showAllTasks) return@filter true
+                
+                if (isSingleDayView) {
+                    if (task.dueDate!! < todayStart && currentDayOffset == 0) {
+                        // Show overdue tasks ONLY on the 'today' view
+                        return@filter true
+                    }
+                    task.dueDate!! >= currentViewDayStart && task.dueDate!! < currentViewDayEnd
+                } else {
+                    if (task.dueDate!! < todayStart) return@filter true // Overdue tasks always shown
+                    task.dueDate!! < sevenDaysFromNow
+                }
+            }
         }
 
         adapter = TaskAdapter(
             tasks = displayTasks,
             categories = categories,
             theme = themeSwitcher.currentTheme,
-            onTaskClick = { showEditTaskDialog(it) },
+            onTaskClick = { task ->
+                if (actionMode != null) {
+                    task.id?.let { toggleSelection(it) }
+                } else {
+                    showEditTaskDialog(task)
+                }
+            },
             onTaskComplete = { task, isChecked ->
                 task.isCompleted = isChecked
                 taskList.update(task)
@@ -177,13 +347,34 @@ class TaskListActivity : AppCompatActivity() {
                 }
                 refreshTasks()
             },
-            onTaskDelete = { task -> showDeleteConfirm(task) }
+            onTaskLongClick = { task ->
+                if (actionMode == null) {
+                    actionMode = startSupportActionMode(actionModeCallback)
+                }
+                task.id?.let { toggleSelection(it) }
+            }
         )
+        adapter.selectedTaskIds = selectedTaskIds
         binding.recyclerView.adapter = adapter
 
         val isEmpty = sortedTasks.isEmpty()
         binding.emptyState.visibility = if (isEmpty) View.VISIBLE else View.GONE
         binding.recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
+    }
+
+    private fun toggleSelection(taskId: Long) {
+        if (selectedTaskIds.contains(taskId)) {
+            selectedTaskIds.remove(taskId)
+        } else {
+            selectedTaskIds.add(taskId)
+        }
+        
+        if (selectedTaskIds.isEmpty()) {
+            actionMode?.finish()
+        } else {
+            actionMode?.title = "${selectedTaskIds.size} selected"
+            adapter.selectedTaskIds = selectedTaskIds
+        }
     }
 
     private fun showDeleteConfirm(task: Task) {
@@ -235,9 +426,6 @@ class TaskListActivity : AppCompatActivity() {
         existingTask?.let {
             dialogBinding.taskTitleInput.setText(it.title)
             dialogBinding.taskDescriptionInput.setText(it.description)
-            if (it.recurrenceDays > 0) {
-                dialogBinding.taskRecurrenceInput.setText(it.recurrenceDays.toString())
-            }
             it.dueDate?.let { date ->
                 dialogBinding.taskDueDateInput.setText(
                     android.text.format.DateFormat.getDateFormat(this).format(java.util.Date(date))
@@ -270,6 +458,24 @@ class TaskListActivity : AppCompatActivity() {
                 .setAdapter(categoryAdapter) { dialog, which ->
                     selectedCategoryIndex = which
                     dialogBinding.taskCategoryInput.setText(categoryNames[which])
+                    dialog.dismiss()
+                }
+                .show()
+        }
+
+        val recurrenceOptions = listOf("None" to 0, "Daily" to 1, "Weekly" to 7, "Monthly" to 30, "Yearly" to 365)
+        var selectedRecurrenceDays = existingTask?.recurrenceDays ?: 0
+        val recurrenceLabel = recurrenceOptions.find { it.second == selectedRecurrenceDays }?.first 
+            ?: "Every $selectedRecurrenceDays days"
+        dialogBinding.taskRecurrenceInput.text = recurrenceLabel
+
+        dialogBinding.taskRecurrenceInput.setOnClickListener {
+            val names = recurrenceOptions.map { it.first }.toTypedArray()
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle(getString(R.string.repeat_every_days))
+                .setItems(names) { dialog, which ->
+                    selectedRecurrenceDays = recurrenceOptions[which].second
+                    dialogBinding.taskRecurrenceInput.text = names[which]
                     dialog.dismiss()
                 }
                 .show()
@@ -327,18 +533,21 @@ class TaskListActivity : AppCompatActivity() {
                 }
 
                 val categoryId = if (selectedCategoryIndex == 0) null else categories[selectedCategoryIndex - 1].id
-                val recurrenceDays = dialogBinding.taskRecurrenceInput.text.toString().trim().toIntOrNull() ?: 0
+                val recurrenceDays = selectedRecurrenceDays
 
                 if (existingTask == null) {
-                    val task = Task(
-                        title = title,
-                        description = dialogBinding.taskDescriptionInput.text.toString().trim(),
-                        categoryId = categoryId,
-                        dueDate = selectedDueDate,
-                        reminderTime = selectedReminderTime,
-                        recurrenceDays = recurrenceDays
-                    )
-                    taskList.add(task)
+                    val titles = title.split("\n").map { it.trim() }.filter { it.isNotEmpty() }
+                    titles.forEach { t ->
+                        val task = Task(
+                            title = t,
+                            description = dialogBinding.taskDescriptionInput.text.toString().trim(),
+                            categoryId = categoryId,
+                            dueDate = selectedDueDate,
+                            reminderTime = selectedReminderTime,
+                            recurrenceDays = recurrenceDays
+                        )
+                        taskList.add(task)
+                    }
                 } else {
                     existingTask.title = title
                     existingTask.description = dialogBinding.taskDescriptionInput.text.toString().trim()

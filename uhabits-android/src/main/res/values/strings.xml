@@ -294,4 +294,6 @@
     <string name="default_startup_screen_title">Default Startup Screen</string>
     <string name="default_startup_screen_summary">Choose which screen to show on app launch</string>
     <string name="repeat_every_days">Repeat every (days)</string>
+    <string name="show_all_tasks">Show all tasks</string>
+    <string name="show_upcoming_tasks">Show upcoming tasks</string>
 </resources>

@@ -14,10 +14,11 @@
             android:id="@+id/taskTitleInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
             android:hint="@string/task_title"
-            android:inputType="textCapSentences"
-            android:maxLines="1" />
+            android:inputType="textCapSentences|textMultiLine"
+            android:minLines="1"
+            android:maxLines="10"
+            android:padding="8dp" />
 
         <EditText
             android:id="@+id/taskDescriptionInput"
@@ -123,17 +124,18 @@
                 android:layout_weight="1"
                 android:text="@string/repeat_every_days" />
 
-            <EditText
+            <TextView
                 android:id="@+id/taskRecurrenceInput"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:minHeight="48dp"
-                android:minWidth="48dp"
                 android:gravity="center_vertical|end"
-                android:hint="0"
-                android:inputType="number"
+                android:text="None"
                 android:textColor="?android:attr/textColorSecondary"
-                android:padding="8dp" />
+                android:padding="8dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground" />
         </LinearLayout>
 
     </LinearLayout>
