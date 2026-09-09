@@ -293,4 +293,5 @@
     <string name="jump_to_date">Jump to Date</string>
     <string name="default_startup_screen_title">Default Startup Screen</string>
     <string name="default_startup_screen_summary">Choose which screen to show on app launch</string>
+    <string name="repeat_every_days">Repeat every (days)</string>
 </resources>

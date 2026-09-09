@@ -13,5 +13,6 @@ create table Tasks (
     due_date integer,
     reminder_time integer,
     completed integer not null default 0,
-    position integer not null default 0
+    position integer not null default 0,
+    recurrence_days integer not null default 0
 );

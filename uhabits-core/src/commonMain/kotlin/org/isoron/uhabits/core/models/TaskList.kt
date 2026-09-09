@@ -135,7 +135,8 @@ class TaskList(private val taskRepository: TaskRepository) {
             dueDate = task.dueDate,
             reminderTime = task.reminderTime,
             completed = if (task.isCompleted) 1 else 0,
-            position = task.position
+            position = task.position,
+            recurrenceDays = task.recurrenceDays
         )
 
         fun copyTo(data: TaskData) = Task(
@@ -146,7 +147,8 @@ class TaskList(private val taskRepository: TaskRepository) {
             dueDate = data.dueDate,
             reminderTime = data.reminderTime,
             isCompleted = data.completed != 0,
-            position = data.position
+            position = data.position,
+            recurrenceDays = data.recurrenceDays
         )
     }
 }

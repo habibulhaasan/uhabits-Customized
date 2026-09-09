@@ -54,7 +54,7 @@ class TaskAdapter(
             }
             VIEW_TYPE_CATEGORY_HEADER -> {
                 val view = LayoutInflater.from(parent.context)
-                    .inflate(R.layout.list_item_category_header, parent, false)
+                    .inflate(R.layout.list_item_task_category_header, parent, false)
                 CategoryHeaderViewHolder(view)
             }
             else -> {
@@ -169,7 +169,7 @@ class TaskAdapter(
         private val titleView: TextView = view.findViewById(R.id.dateHeaderTitle)
         fun bind(item: TaskListItem.DateHeader) {
             titleView.text = item.dateString
-            titleView.alpha = if (item.isUpcoming) 0.5f else 1.0f
+            titleView.alpha = if (item.isUpcoming) 0.85f else 1.0f
         }
     }
 
@@ -207,7 +207,7 @@ class TaskAdapter(
                 onTaskDelete(t)
             }
             cardView.bind(item.task, item.category)
-            cardView.alpha = if (item.isUpcoming) 0.6f else 1.0f
+            cardView.alpha = if (item.isUpcoming) 0.85f else 1.0f
         }
     }
 

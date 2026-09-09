@@ -1,18 +1,3 @@
-create table if not exists TaskCategories (
-    id integer primary key autoincrement,
-    name text not null,
-    color integer not null default 0,
-    position integer not null default 0
-);
-
-create table if not exists Tasks (
-    id integer primary key autoincrement,
-    title text not null,
-    description text,
-    category_id integer references TaskCategories(id),
-    due_date integer,
-    reminder_time integer,
-    completed integer not null default 0,
-    position integer not null default 0
-);
-
+-- recurrence_days column is already included in the Tasks CREATE TABLE (27.sql).
+-- This migration is a no-op kept for version continuity.
+SELECT 1;

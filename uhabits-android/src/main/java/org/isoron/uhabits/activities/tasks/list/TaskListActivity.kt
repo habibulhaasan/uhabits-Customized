@@ -44,6 +44,8 @@ class TaskListActivity : AppCompatActivity() {
     private lateinit var adapter: TaskAdapter
     private lateinit var themeSwitcher: AndroidThemeSwitcher
 
+    private var limitTo7Days = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val component = (application as HabitsApplication).component
@@ -57,7 +59,8 @@ class TaskListActivity : AppCompatActivity() {
             toolbar = binding.toolbar,
             title = getString(R.string.tasks),
             color = PaletteColor(11),
-            theme = themeSwitcher.currentTheme
+            theme = themeSwitcher.currentTheme,
+            displayHomeAsUpEnabled = false
         )
         binding.root.applyRootViewInsets()
         setContentView(binding.root)
@@ -126,29 +129,52 @@ class TaskListActivity : AppCompatActivity() {
         val categories = taskCategoryList.getAll()
         val allTasks = taskList.getAll()
 
-        // Sort: incomplete first (overdue → upcoming → no date), completed last
         val now = System.currentTimeMillis()
         val sortedTasks = allTasks.sortedWith(
             compareBy<Task> { it.isCompleted }
                 .thenBy { task ->
-                    // For incomplete tasks: overdue first, then by due date, no-date last
                     if (!task.isCompleted) {
                         task.dueDate ?: Long.MAX_VALUE
                     } else {
-                        // Completed tasks: most recently completed (by position) first
                         task.position.toLong()
                     }
                 }
         )
 
+        val sevenDaysFromNow = now + 7L * 24 * 60 * 60 * 1000
+        val displayTasks = if (limitTo7Days) {
+            sortedTasks.filter { task ->
+                if (task.isCompleted) true
+                else if (task.dueDate == null) true
+                else task.dueDate!! <= sevenDaysFromNow
+            }
+        } else {
+            sortedTasks
+        }
+
         adapter = TaskAdapter(
-            tasks = sortedTasks,
+            tasks = displayTasks,
             categories = categories,
             theme = themeSwitcher.currentTheme,
             onTaskClick = { showEditTaskDialog(it) },
             onTaskComplete = { task, isChecked ->
                 task.isCompleted = isChecked
                 taskList.update(task)
+                // If completing a recurring task, create the next occurrence
+                if (isChecked && task.recurrenceDays > 0 && task.dueDate != null) {
+                    val nextDueDate = task.dueDate!! + task.recurrenceDays.toLong() * 24 * 60 * 60 * 1000
+                    val nextTask = Task(
+                        title = task.title,
+                        description = task.description,
+                        categoryId = task.categoryId,
+                        dueDate = nextDueDate,
+                        reminderTime = if (task.reminderTime != null) {
+                            task.reminderTime!! + task.recurrenceDays.toLong() * 24 * 60 * 60 * 1000
+                        } else null,
+                        recurrenceDays = task.recurrenceDays
+                    )
+                    taskList.add(nextTask)
+                }
                 refreshTasks()
             },
             onTaskDelete = { task -> showDeleteConfirm(task) }
@@ -187,6 +213,9 @@ class TaskListActivity : AppCompatActivity() {
             cal.set(Calendar.MILLISECOND, 0)
             val selectedStart = cal.timeInMillis
             
+            limitTo7Days = false
+            refreshTasks()
+            
             val targetPosition = adapter.findDatePosition(selectedStart)
             if (targetPosition >= 0) {
                 binding.recyclerView.smoothScrollToPosition(targetPosition)
@@ -206,6 +235,9 @@ class TaskListActivity : AppCompatActivity() {
         existingTask?.let {
             dialogBinding.taskTitleInput.setText(it.title)
             dialogBinding.taskDescriptionInput.setText(it.description)
+            if (it.recurrenceDays > 0) {
+                dialogBinding.taskRecurrenceInput.setText(it.recurrenceDays.toString())
+            }
             it.dueDate?.let { date ->
                 dialogBinding.taskDueDateInput.setText(
                     android.text.format.DateFormat.getDateFormat(this).format(java.util.Date(date))
@@ -295,6 +327,7 @@ class TaskListActivity : AppCompatActivity() {
                 }
 
                 val categoryId = if (selectedCategoryIndex == 0) null else categories[selectedCategoryIndex - 1].id
+                val recurrenceDays = dialogBinding.taskRecurrenceInput.text.toString().trim().toIntOrNull() ?: 0
 
                 if (existingTask == null) {
                     val task = Task(
@@ -302,7 +335,8 @@ class TaskListActivity : AppCompatActivity() {
                         description = dialogBinding.taskDescriptionInput.text.toString().trim(),
                         categoryId = categoryId,
                         dueDate = selectedDueDate,
-                        reminderTime = selectedReminderTime
+                        reminderTime = selectedReminderTime,
+                        recurrenceDays = recurrenceDays
                     )
                     taskList.add(task)
                 } else {
@@ -311,6 +345,7 @@ class TaskListActivity : AppCompatActivity() {
                     existingTask.categoryId = categoryId
                     existingTask.dueDate = selectedDueDate
                     existingTask.reminderTime = selectedReminderTime
+                    existingTask.recurrenceDays = recurrenceDays
                     taskList.update(existingTask)
                 }
                 dialog.dismiss()

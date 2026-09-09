@@ -13,55 +13,56 @@ data class TaskData(
     var dueDate: Long? = null,
     var reminderTime: Long? = null,
     var completed: Int = 0,
-    var position: Int = 0
+    var position: Int = 0,
+    var recurrenceDays: Int = 0
 )
 
 class TaskRepository(private val db: Database) {
     private val findAllStmt by lazy {
         db.prepareStatement(
-            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position
+            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_days
                FROM Tasks ORDER BY position"""
         )
     }
 
     private val findByCategoryStmt by lazy {
         db.prepareStatement(
-            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position
+            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_days
                FROM Tasks WHERE category_id IS ? OR category_id = ? ORDER BY position"""
         )
     }
 
     private val findUpcomingStmt by lazy {
         db.prepareStatement(
-            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position
+            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_days
                FROM Tasks WHERE completed = 0 AND due_date IS NOT NULL AND due_date >= ? AND due_date <= ? ORDER BY due_date"""
         )
     }
 
     private val findOverdueStmt by lazy {
         db.prepareStatement(
-            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position
+            """SELECT id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_days
                FROM Tasks WHERE completed = 0 AND due_date IS NOT NULL AND due_date < ? ORDER BY due_date"""
         )
     }
 
     private val insertStmt by lazy {
         db.prepareStatement(
-            """INSERT INTO Tasks(title, description, category_id, due_date, reminder_time, completed, position)
-               VALUES (?, ?, ?, ?, ?, ?, ?)"""
+            """INSERT INTO Tasks(title, description, category_id, due_date, reminder_time, completed, position, recurrence_days)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
         )
     }
 
     private val insertWithIdStmt by lazy {
         db.prepareStatement(
-            """INSERT INTO Tasks(id, title, description, category_id, due_date, reminder_time, completed, position)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
+            """INSERT INTO Tasks(id, title, description, category_id, due_date, reminder_time, completed, position, recurrence_days)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
         )
     }
 
     private val updateStmt by lazy {
         db.prepareStatement(
-            """UPDATE Tasks SET title=?, description=?, category_id=?, due_date=?, reminder_time=?, completed=?, position=? WHERE id=?"""
+            """UPDATE Tasks SET title=?, description=?, category_id=?, due_date=?, reminder_time=?, completed=?, position=?, recurrence_days=? WHERE id=?"""
         )
     }
 
@@ -132,7 +133,7 @@ class TaskRepository(private val db: Database) {
     fun update(data: TaskData) {
         updateStmt.reset()
         bindForInsert(updateStmt, data)
-        updateStmt.bindLong(8, data.id!!)
+        updateStmt.bindLong(9, data.id!!)
         updateStmt.step()
     }
 
@@ -151,6 +152,7 @@ class TaskRepository(private val db: Database) {
         if (data.reminderTime != null) stmt.bindLong(5 + o, data.reminderTime!!) else stmt.bindNull(5 + o)
         stmt.bindInt(6 + o, data.completed)
         stmt.bindInt(7 + o, data.position)
+        stmt.bindInt(8 + o, data.recurrenceDays)
     }
 
     private fun readRow(stmt: PreparedStatement): TaskData {
@@ -162,7 +164,8 @@ class TaskRepository(private val db: Database) {
             dueDate = stmt.getLongOrNull(4),
             reminderTime = stmt.getLongOrNull(5),
             completed = stmt.getInt(6),
-            position = stmt.getInt(7)
+            position = stmt.getInt(7),
+            recurrenceDays = stmt.getInt(8)
         )
     }
 }
